@@ -255,7 +255,10 @@ if ( ! defined( 'ABSPATH' ) ) {
                 </div>
                 <div class="lg:w-1/2 relative reveal delay-200 text-center w-full max-w-md lg:max-w-full mx-auto">
                     <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[350px] lg:w-[600px] h-[350px] lg:h-[600px] bg-gradient-to-tr from-brand-soft to-white rounded-full filter blur-3xl -z-10 opacity-80"></div>
-                    <div class="hidden lg:block absolute -top-10 right-0 bg-white p-4 rounded-2xl shadow-lg z-20 animate-float border-2 border-brand-soft"><span class="text-3xl block text-center mb-1">🇲🇾</span> <span class="font-display font-bold text-brand-navy text-sm">No.1 tại Malaysia</span></div>
+                    <div class="hidden lg:block absolute -top-10 right-0 bg-white p-4 rounded-2xl shadow-lg z-20 animate-float border-2 border-brand-soft flex items-center gap-3">
+                        <img src="<?php echo get_template_directory_uri(); ?>/flag-for-flag-malaysia-svgrepo-com.svg" alt="Malaysia flag" class="w-8 h-8 inline-block mr-1" style="min-width:2rem; min-height:2rem;">
+                        <span class="font-display font-bold text-brand-navy text-sm">No.1 tại Malaysia</span>
+                    </div>
                     <img src="https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Care-Milk-tach-nen-scaled.png" 
                          onerror="this.src='https://placehold.co/600x600/e0fbfc/1a4f8a?text=CareMIL+Product&font=baloo2'" 
                          alt="Hộp sữa CareMIL - Plant Based" 
@@ -545,7 +548,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                             </div>
                         </div>
                         <div class="absolute -bottom-6 -right-6 bg-white py-3 px-6 rounded-2xl shadow-lg border border-gray-100 flex items-center gap-3 animate-bounce-slow">
-                            <span class="text-3xl">🇫🇷</span>
+                            <img src="<?php echo get_template_directory_uri(); ?>/flag-for-flag-france-svgrepo-com.svg" alt="Malaysia flag" class="w-8 h-8 inline-block mr-1" style="min-width:2rem; min-height:2rem;">
                             <div class="text-left"><p class="text-xs font-bold text-gray-400 uppercase">Trademark of</p><p class="text-brand-navy font-bold font-display">Nexira, France</p></div>
                         </div>
                     </div>
@@ -631,7 +634,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <div class="bg-white rounded-3xl p-8 shadow-soft border border-brand-soft reveal delay-200">
                     <h3 class="text-2xl lg:text-3xl font-display font-black text-brand-navy mb-6 flex items-center gap-3"><i class="fas fa-certificate text-brand-gold"></i> Nguồn Gốc Xuất Xứ</h3>
                     <div class="space-y-4">
-                        <div class="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-center gap-4"><div class="text-3xl">🇲🇾</div><div><p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Xuất Xứ</p><p class="text-brand-navy font-bold">Malaysia</p></div></div>
+                        <div class="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-center gap-4"><div class="text-3xl"><img src="<?php echo get_template_directory_uri(); ?>/flag-for-flag-malaysia-svgrepo-com.svg" alt="Malaysia flag" class="w-8 h-8 inline-block mr-1" style="min-width:2rem; min-height:2rem;"></div><div><p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Xuất Xứ</p><p class="text-brand-navy font-bold">Malaysia</p></div></div>
                         <div class="p-4 bg-yellow-50 rounded-2xl border border-yellow-100 flex items-center gap-4"><div class="w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-sm text-brand-gold font-bold border-2 border-brand-gold">GMP</div><div><p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Tiêu Chuẩn</p><p class="text-brand-navy font-bold">GMP & Halal</p></div></div>
                         <div class="pt-4 border-t border-gray-100 text-sm text-gray-500">
                             <p><strong>Owner:</strong> DAWN BRIDGE SDN BHD</p>
