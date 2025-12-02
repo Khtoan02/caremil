@@ -26,7 +26,7 @@
             <div class="site-info text-center text-sm text-gray-600 pt-6 border-t border-gray-200">
                 <p>
                     &copy; <?php echo date( 'Y' ); ?> 
-                    <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="text-primary hover:text-primary-dark transition-colors">
+                    <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="text-blue-600 hover:text-blue-700 transition-colors duration-300">
                         <?php bloginfo( 'name' ); ?>
                     </a>
                     . Tất cả quyền được bảo lưu.

@@ -16,7 +16,7 @@ get_header();
             <header class="page-header mb-8">
                 <h1 class="page-title text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                     Kết quả tìm kiếm cho: 
-                    <span class="text-primary"><?php echo get_search_query(); ?></span>
+                    <span class="text-blue-600"><?php echo get_search_query(); ?></span>
                 </h1>
             </header>
 
@@ -29,7 +29,7 @@ get_header();
                         <div class="p-6">
                             <header class="entry-header mb-4">
                                 <h2 class="entry-title text-2xl font-bold mb-2">
-                                    <a href="<?php the_permalink(); ?>" class="text-gray-900 hover:text-primary transition-colors">
+                                    <a href="<?php the_permalink(); ?>" class="text-gray-900 hover:text-blue-600 transition-colors duration-300">
                                         <?php the_title(); ?>
                                     </a>
                                 </h2>

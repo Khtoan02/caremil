@@ -45,22 +45,21 @@ function caremil_setup() {
 add_action( 'after_setup_theme', 'caremil_setup' );
 
 /**
+ * Add Tailwind CDN script directly in head
+ */
+function caremil_add_tailwind_cdn() {
+    ?>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <?php
+}
+add_action( 'wp_head', 'caremil_add_tailwind_cdn', 1 );
+
+/**
  * Enqueue scripts and styles
  */
 function caremil_scripts() {
-    // Enqueue Tailwind CSS (built from src/input.css)
-    $tailwind_css = get_template_directory() . '/dist/style.css';
-    if ( file_exists( $tailwind_css ) ) {
-        wp_enqueue_style( 
-            'caremil-tailwind', 
-            get_template_directory_uri() . '/dist/style.css', 
-            array(), 
-            filemtime( $tailwind_css ) 
-        );
-    } else {
-        // Fallback to style.css if Tailwind hasn't been built yet
-        wp_enqueue_style( 'caremil-style', get_stylesheet_uri(), array(), '1.0.0' );
-    }
+    // Enqueue theme stylesheet (for custom overrides if needed)
+    wp_enqueue_style( 'caremil-style', get_stylesheet_uri(), array(), '1.0.0' );
 
     // Enqueue theme script
     wp_enqueue_script( 'caremil-script', get_template_directory_uri() . '/js/main.js', array(), '1.0.0', true );
@@ -80,9 +79,9 @@ function caremil_widgets_init() {
         'name'          => __( 'Sidebar', 'caremil' ),
         'id'            => 'sidebar-1',
         'description'   => __( 'Widgets hiển thị ở sidebar', 'caremil' ),
-        'before_widget' => '<section id="%1$s" class="widget %2$s">',
+        'before_widget' => '<section id="%1$s" class="widget %2$s mb-6 p-4 bg-white rounded-lg shadow">',
         'after_widget'  => '</section>',
-        'before_title'  => '<h2 class="widget-title">',
+        'before_title'  => '<h2 class="widget-title text-xl font-bold mb-3 text-gray-900">',
         'after_title'   => '</h2>',
     ) );
 
@@ -92,7 +91,7 @@ function caremil_widgets_init() {
         'description'   => __( 'Widgets hiển thị ở footer cột 1', 'caremil' ),
         'before_widget' => '<section id="%1$s" class="widget %2$s">',
         'after_widget'  => '</section>',
-        'before_title'  => '<h3 class="widget-title">',
+        'before_title'  => '<h3 class="widget-title text-lg font-bold mb-3 text-gray-900">',
         'after_title'   => '</h3>',
     ) );
 
@@ -102,7 +101,7 @@ function caremil_widgets_init() {
         'description'   => __( 'Widgets hiển thị ở footer cột 2', 'caremil' ),
         'before_widget' => '<section id="%1$s" class="widget %2$s">',
         'after_widget'  => '</section>',
-        'before_title'  => '<h3 class="widget-title">',
+        'before_title'  => '<h3 class="widget-title text-lg font-bold mb-3 text-gray-900">',
         'after_title'   => '</h3>',
     ) );
 }

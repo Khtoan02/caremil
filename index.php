@@ -30,7 +30,7 @@ get_header();
                         <div class="p-6">
                             <header class="entry-header mb-4">
                                 <h2 class="entry-title text-2xl md:text-3xl font-bold mb-3">
-                                    <a href="<?php the_permalink(); ?>" class="text-gray-900 hover:text-primary transition-colors">
+                                    <a href="<?php the_permalink(); ?>" class="text-gray-900 hover:text-blue-600 transition-colors duration-300">
                                         <?php the_title(); ?>
                                     </a>
                                 </h2>
@@ -55,7 +55,7 @@ get_header();
                             </div>
 
                             <footer class="entry-footer">
-                                <a href="<?php the_permalink(); ?>" class="read-more inline-flex items-center text-primary hover:text-primary-dark font-medium transition-colors">
+                                <a href="<?php the_permalink(); ?>" class="read-more inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors duration-300">
                                     Đọc thêm
                                     <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>

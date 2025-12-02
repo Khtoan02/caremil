@@ -46,7 +46,7 @@ get_header();
                 </div>
 
                 <div class="mt-8">
-                    <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="btn btn-primary inline-block">
+                    <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-300">
                         Về trang chủ
                     </a>
                 </div>

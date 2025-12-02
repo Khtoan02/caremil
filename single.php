@@ -42,7 +42,7 @@ get_header();
                                 </svg>
                                 <?php
                                 foreach ( $categories as $category ) {
-                                    echo '<a href="' . esc_url( get_category_link( $category->term_id ) ) . '" class="text-primary hover:text-primary-dark transition-colors">' . esc_html( $category->name ) . '</a>';
+                                    echo '<a href="' . esc_url( get_category_link( $category->term_id ) ) . '" class="text-blue-600 hover:text-blue-700 transition-colors duration-300">' . esc_html( $category->name ) . '</a>';
                                 }
                                 ?>
                             </span>
@@ -83,7 +83,7 @@ get_header();
                             <div class="flex flex-wrap gap-2">
                                 <?php
                                 foreach ( $tags as $tag ) {
-                                    echo '<a href="' . esc_url( get_tag_link( $tag->term_id ) ) . '" class="inline-block px-3 py-1 text-sm bg-primary text-white rounded-full hover:bg-primary-dark transition-colors">' . esc_html( $tag->name ) . '</a>';
+                                    echo '<a href="' . esc_url( get_tag_link( $tag->term_id ) ) . '" class="inline-block px-3 py-1 text-sm bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors duration-300">' . esc_html( $tag->name ) . '</a>';
                                 }
                                 ?>
                             </div>
