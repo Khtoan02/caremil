@@ -857,61 +857,88 @@ if ( ! defined( 'ABSPATH' ) ) {
     </section>
 
     <!-- Footer: Warm & Clean -->
-    <footer class="bg-white pt-20 pb-10 mt-10 relative" id="order">
-        <!-- Top Border decoration -->
+    <!-- Footer -->
+    <footer class="bg-white pt-12 lg:pt-20 pb-8 lg:pb-10 mt-0 relative" id="order">
         <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-blue via-brand-pink to-brand-gold"></div>
-
         <div class="container mx-auto px-6">
-            <!-- CTA Box: Rounded & Friendly -->
-            <div class="bg-brand-soft rounded-[50px] p-10 md:p-16 relative overflow-hidden mb-20 shadow-soft text-center reveal">
+            <!-- CTA Box -->
+            <div class="bg-brand-soft rounded-3xl lg:rounded-[50px] p-8 lg:p-16 relative overflow-hidden mb-12 shadow-soft text-center reveal">
                 <div class="relative z-10 max-w-2xl mx-auto">
-                    <h2 class="text-3xl md:text-5xl font-display font-black text-brand-navy mb-4">Dành Tặng Điều Tốt Nhất Cho Con</h2>
-                    <p class="text-xl text-gray-600 mb-8 font-medium">Để lại thông tin để nhận tư vấn dinh dưỡng miễn phí từ chuyên gia CareMIL nhé!</p>
-                    
+                    <h2 class="text-2xl md:text-3xl lg:text-5xl font-display font-black text-brand-navy mb-3 lg:mb-4">Tư Vấn Dinh Dưỡng</h2>
+                    <p class="text-sm lg:text-xl text-gray-600 mb-6 lg:mb-8 font-medium">Để lại thông tin để nhận tư vấn miễn phí từ chuyên gia CareMIL.</p>
                     <form class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <input type="text" placeholder="Số điện thoại của mẹ..." class="px-6 py-4 rounded-full text-gray-700 bg-white border-2 border-white focus:outline-none focus:border-brand-blue shadow-sm w-full sm:w-80 font-bold">
-                        <button type="button" class="bg-brand-pink text-white font-bold py-4 px-10 rounded-full shadow-lg hover:bg-pink-500 transition hover:scale-105 whitespace-nowrap">
+                        <input type="text" placeholder="Số điện thoại của mẹ..." class="px-6 py-3 lg:py-4 rounded-full text-gray-700 bg-white border-2 border-white focus:outline-none focus:border-brand-blue shadow-sm w-full sm:w-80 font-bold">
+                        <button type="button" class="bg-brand-pink text-white font-bold py-3 lg:py-4 px-8 lg:px-10 rounded-full shadow-lg hover:bg-pink-500 transition hover:scale-105 whitespace-nowrap mt-2 sm:mt-0">
                             ĐĂNG KÝ NGAY
                         </button>
                     </form>
                 </div>
-                <!-- Decor Circles -->
-                <div class="absolute top-0 left-0 w-32 h-32 bg-white rounded-full opacity-50 -ml-10 -mt-10"></div>
-                <div class="absolute bottom-0 right-0 w-40 h-40 bg-brand-gold rounded-full opacity-20 -mr-10 -mb-10"></div>
             </div>
-
-            <!-- Footer Info -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 border-t border-gray-100 pt-12">
-                <div class="col-span-1 md:col-span-2">
-                    <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="text-3xl font-display font-black text-brand-navy tracking-tight flex items-center gap-2 mb-4">
+            
+            <!-- Footer Content -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 border-t border-gray-100 pt-8 lg:pt-12 text-center lg:text-left">
+                
+                <!-- Brand & Contact (Left - 4 cols) -->
+                <div class="lg:col-span-4 space-y-4">
+                    <a href="#" class="text-2xl font-display font-black text-brand-navy tracking-tight flex items-center justify-center lg:justify-start gap-2 mb-2">
                         <i class="fas fa-leaf text-brand-gold"></i> Care<span class="text-brand-blue">MIL</span>
                     </a>
-                    <p class="text-gray-500 mb-6 max-w-sm font-medium">Nguồn dinh dưỡng thực vật tinh khiết, được hàng ngàn bà mẹ tin dùng.</p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-brand-blue hover:bg-brand-blue hover:text-white transition"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-brand-pink hover:bg-brand-pink hover:text-white transition"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-black hover:text-white transition"><i class="fab fa-tiktok"></i></a>
+                    <div class="bg-blue-50 rounded-2xl p-4 border border-blue-100 inline-block w-full">
+                        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Tổng đài CSKH</p>
+                        <p class="text-2xl font-black text-brand-pink">(+84) 985 39 18 81</p>
+                        <p class="text-sm text-brand-navy font-bold mt-1">cskh@npfood.vn</p>
+                    </div>
+                    <div class="flex justify-center lg:justify-start space-x-3 mt-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-blue transition"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-blue transition"><i class="fab fa-youtube"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-blue transition"><i class="fas fa-globe"></i></a>
                     </div>
                 </div>
-                <div>
-                    <h4 class="font-bold text-lg mb-6 text-brand-navy font-display">Về Chúng Tôi</h4>
-                    <ul class="space-y-3 text-gray-500 font-medium">
-                        <li><a href="#" class="hover:text-brand-blue transition">Câu chuyện thương hiệu</a></li>
-                        <li><a href="#" class="hover:text-brand-blue transition">Chứng nhận chất lượng</a></li>
-                        <li><a href="#" class="hover:text-brand-blue transition">Góc chuyên gia</a></li>
-                    </ul>
+
+                <!-- Distributor Info (Middle - 5 cols) -->
+                <div class="lg:col-span-5 text-sm space-y-4 text-gray-600">
+                    <div>
+                        <h4 class="font-bold text-lg mb-2 text-brand-navy font-display">Nhập Khẩu & Phân Phối Tại Việt Nam</h4>
+                        <p class="font-bold text-gray-800">CÔNG TY TNHH NP FOOD (NP FOOD COMPANY LIMITED)</p>
+                        <p><i class="fas fa-map-marker-alt text-brand-gold mr-2"></i> Group 4, Quang Minh, Ha Noi, Vietnam.</p>
+                        <p><i class="fas fa-id-card text-brand-gold mr-2"></i> TIN: 0109082378</p>
+                    </div>
+                    <div class="pt-4 border-t border-gray-100 mt-4">
+                        <h4 class="font-bold text-base mb-2 text-brand-navy">Chủ Sở Hữu & Sản Xuất (Malaysia)</h4>
+                        <p><strong>Owner:</strong> DAWN BRIDGE SDN BHD</p>
+                        <p class="text-xs">29 & 29-01, Jalan Kempas Utama 1/3, Taman Kempas Utama, 81300 Johor Bahru, Johor.</p>
+                        <p class="mt-2"><strong>Manufacturer:</strong> OMEGA HEALTH PRODUCTS SDN BHD</p>
+                        <p class="text-xs">No. 30, Jalan Mega A, Bandar Teknologi Kajang, 43500 Semenyih, Selangor.</p>
+                    </div>
                 </div>
-                <div>
-                    <h4 class="font-bold text-lg mb-6 text-brand-navy font-display">Hỗ Trợ</h4>
-                    <ul class="space-y-3 text-gray-500 font-medium">
-                        <li class="flex items-center gap-3"><i class="fas fa-phone-alt text-brand-pink"></i> 1900 xxxx</li>
-                        <li class="flex items-center gap-3"><i class="fas fa-envelope text-brand-pink"></i> cskh@caremil.vn</li>
-                        <li><a href="#" class="hover:text-brand-blue transition">Chính sách đổi trả</a></li>
-                    </ul>
+
+                <!-- Certifications (Right - 3 cols) -->
+                <div class="lg:col-span-3 flex flex-col items-center lg:items-end gap-4">
+                    <h4 class="font-bold text-lg text-brand-navy font-display">Chứng Nhận Quốc Tế</h4>
+                    <div class="flex gap-3">
+                        <div class="w-16 h-16 bg-white border-2 border-green-600 rounded-full flex items-center justify-center p-1" title="Halal Certified">
+                            <!-- Simple CSS Halal Icon Representation -->
+                            <div class="text-center leading-none">
+                                <span class="block text-[8px] font-bold text-green-700">HALAL</span>
+                                <span class="block text-xl font-bold text-green-700">حلال</span>
+                            </div>
+                        </div>
+                        <div class="w-16 h-16 bg-white border-2 border-brand-gold rounded-full flex items-center justify-center shadow-sm">
+                            <span class="font-bold text-brand-gold">GMP</span>
+                        </div>
+                        <div class="w-16 h-16 bg-white border-2 border-blue-800 rounded-full flex items-center justify-center shadow-sm text-xs text-center font-bold text-blue-900 p-1">
+                            Made in<br>Malaysia
+                        </div>
+                    </div>
+                    <div class="mt-4 p-2 bg-white border border-gray-200 rounded-lg">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=http://www.dawnbridge.com.my" alt="QR Code" class="w-20 h-20">
+                        <p class="text-[10px] text-center mt-1 text-gray-500">Scan for info</p>
+                    </div>
                 </div>
             </div>
-            <div class="pt-8 text-center text-gray-400 text-sm font-medium">
-                &copy; 2024 CareMIL Vietnam. Made with love for kids.
+            
+            <div class="pt-8 text-center text-gray-400 text-xs lg:text-sm font-medium border-t border-gray-100 mt-8">
+                &copy; 2024 CareMIL Vietnam. All rights reserved.
             </div>
         </div>
     </footer>
