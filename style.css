@@ -1,0 +1,22 @@
+/*
+Theme Name: Caremil
+Theme URI: https://caremil.com
+Author: Caremil Team
+Author URI: https://caremil.com
+Description: Theme WordPress hiện đại và tối giản cho Caremil với Tailwind CSS
+Version: 1.0.0
+Text Domain: caremil
+*/
+
+/*
+ * Theme sử dụng Tailwind CSS
+ * File CSS chính được build từ src/input.css và lưu tại dist/style.css
+ * 
+ * Để build CSS, chạy lệnh:
+ * npm install
+ * npm run build
+ * 
+ * Để watch và tự động build khi phát triển:
+ * npm run dev
+ */
+

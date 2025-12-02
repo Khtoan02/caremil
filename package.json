@@ -1,0 +1,21 @@
+{
+  "name": "caremil-theme",
+  "version": "1.0.0",
+  "description": "Caremil WordPress Theme with Tailwind CSS",
+  "scripts": {
+    "build": "tailwindcss -i ./src/input.css -o ./dist/style.css --minify",
+    "watch": "tailwindcss -i ./src/input.css -o ./dist/style.css --watch",
+    "dev": "tailwindcss -i ./src/input.css -o ./dist/style.css --watch"
+  },
+  "keywords": [
+    "wordpress",
+    "theme",
+    "tailwindcss"
+  ],
+  "author": "Caremil Team",
+  "license": "MIT",
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}
+
