@@ -175,6 +175,34 @@ if ( ! defined( 'ABSPATH' ) ) {
             pointer-events: none;
             user-select: none;
         }
+        @media (max-width: 1024px) {
+            .hero-grid {
+                gap: 2.5rem;
+            }
+        }
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.25rem;
+                line-height: 1.3;
+            }
+            .hero-grid .sticker {
+                padding: 1.25rem;
+            }
+            header .custom-wave svg {
+                height: 50px;
+            }
+        }
+        @media (max-width: 640px) {
+            .hero-title {
+                font-size: 1.9rem;
+            }
+            .hero-grid {
+                gap: 2rem;
+            }
+            .nutrition-table {
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-brand-cream text-gray-600 font-sans selection:bg-brand-gold selection:text-white">
@@ -198,8 +226,17 @@ if ( ! defined( 'ABSPATH' ) ) {
                     </button>
                 </div>
                 
-                <button class="md:hidden text-brand-navy text-2xl bg-blue-50 p-2 rounded-full w-10 h-10 flex items-center justify-center">
+                <button id="nav-toggle" aria-label="Mở menu" class="md:hidden text-brand-navy text-2xl bg-blue-50 p-2 rounded-full w-10 h-10 flex items-center justify-center">
                     <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <div id="mobile-menu" class="md:hidden mt-3 hidden bg-white/95 backdrop-blur-lg rounded-3xl shadow-soft border border-white px-6 py-4 space-y-3 font-bold text-gray-600">
+                <a href="#loi-ich" class="block hover:text-brand-blue transition">Bé Yêu</a>
+                <a href="#thanh-phan" class="block hover:text-brand-blue transition">Dinh Dưỡng</a>
+                <a href="#bang-thanh-phan" class="block hover:text-brand-blue transition">Chi Tiết</a>
+                <a href="#huong-dan" class="block hover:text-brand-blue transition">Pha Chế</a>
+                <button onclick="document.getElementById('order').scrollIntoView()" class="w-full bg-brand-gold text-white font-bold py-3 rounded-2xl shadow-lg hover:bg-yellow-400 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-shopping-cart"></i> Mua Ngay
                 </button>
             </div>
         </div>
@@ -214,13 +251,13 @@ if ( ! defined( 'ABSPATH' ) ) {
         <div class="absolute bottom-20 left-1/4 text-green-300 opacity-30 text-4xl animate-wiggle"><i class="fas fa-leaf"></i></div>
 
         <div class="container mx-auto px-6 relative z-10">
-            <div class="flex flex-col lg:flex-row items-center gap-10">
+            <div class="hero-grid flex flex-col lg:flex-row items-center gap-10">
                 <div class="lg:w-1/2 text-center lg:text-left reveal active space-y-6">
                     <div class="inline-block px-4 py-2 rounded-full bg-white border-2 border-brand-blue/30 text-brand-navy font-bold shadow-sm mb-2">
                         🌱 Dinh dưỡng chuẩn Clean Label
                     </div>
                     
-                    <h1 class="text-4xl lg:text-6xl font-display font-black text-brand-navy leading-tight">
+                    <h1 class="hero-title text-4xl lg:text-6xl font-display font-black text-brand-navy leading-tight">
                         Mát Lành Như <br>
                         <span class="text-brand-blue relative inline-block">
                             Dòng Sữa Mẹ
@@ -903,6 +940,24 @@ if ( ! defined( 'ABSPATH' ) ) {
     </div>
 
     <script>
+        const navToggle = document.getElementById('nav-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (navToggle && mobileMenu) {
+            navToggle.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            mobileMenu.querySelectorAll('a, button').forEach((item) => {
+                item.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+            document.addEventListener('click', (event) => {
+                if (!mobileMenu.contains(event.target) && event.target !== navToggle && !navToggle.contains(event.target)) {
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+        }
+
         function reveal() {
             var reveals = document.querySelectorAll(".reveal");
             for (var i = 0; i < reveals.length; i++) {
