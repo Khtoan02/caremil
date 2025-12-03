@@ -394,7 +394,14 @@ if ( ! defined( 'ABSPATH' ) ) {
             </div>
             <div class="mx-auto bg-slate-50 rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 mb-16 reveal delay-100">
                 <div class="p-4 lg:p-8 text-center bg-white border-b border-slate-100 relative z-10 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <h3 class="text-xl md:text-2xl font-display font-bold text-brand-navy flex items-center gap-2"><i class="fas fa-microscope text-brand-blue"></i> Mô Phỏng Cơ Chế</h3>
+                    <div class="text-center md:text-left w-full">
+                        <h3 class="text-xl md:text-2xl font-display font-bold text-brand-navy flex items-center gap-2 md:justify-start justify-center">
+                            <i class="fas fa-microscope text-brand-blue"></i> Mô Phỏng Cơ Chế
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-2 mb-1 w-full md:text-left text-center">
+                            Ấn vào nút <strong class="text-brand-pink">Rò Rỉ Ruột</strong> để xem mô phỏng khi hàng rào ruột bị tổn thương.
+                        </p>
+                    </div>
                     <div class="inline-flex bg-slate-100 p-1 rounded-full shadow-inner gap-1">
                         <button onclick="setGutMode('normal')" id="btn-normal" class="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-300 bg-white text-brand-blue shadow-md"><i class="fas fa-check-circle"></i> Ruột Khỏe Mạnh</button>
                         <button onclick="setGutMode('leaky')" id="btn-leaky" class="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-300 text-gray-500 hover:text-gray-800"><i class="fas fa-exclamation-circle"></i> Rò Rỉ Ruột</button>
