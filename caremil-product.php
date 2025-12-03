@@ -642,7 +642,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                         <img src="https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Hop-sua.png" class="relative z-10 w-52 lg:w-72 drop-shadow-2xl transform group-hover:-translate-y-6 transition duration-700 ease-out" alt="CareMIL Hộp 800g">
                         <div class="absolute top-10 right-10 bg-brand-gold text-brand-navy font-bold text-xs px-3 py-1 rounded-full shadow-md animate-bounce-slow z-20">Tiết Kiệm</div>
                     </div>
-                    <h3 class="text-2xl lg:text-3xl font-display font-black text-brand-navy mb-2">Hộp Thiếc 800g</h3>
+                    <h3 class="text-2xl lg:text-3xl font-display font-black text-brand-navy mb-2">Hộp 800g</h3>
                     <p class="text-gray-500 text-sm lg:text-base mb-6 text-center px-8 max-w-sm">Giải pháp dinh dưỡng kinh tế cho bé sử dụng hàng ngày tại nhà. Bảo quản tốt, dễ dàng pha chế.</p>
                     <button onclick="document.getElementById('order').scrollIntoView({behavior: 'smooth'})" class="bg-white border-2 border-brand-blue text-brand-blue font-bold py-3 px-8 rounded-full shadow-sm hover:bg-brand-blue hover:text-white transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2"><i class="fas fa-cart-plus"></i> Đặt Mua Hộp</button>
                 </div>
