@@ -1,8 +1,8 @@
 <?php
 /**
- * Template Name: CareMIL Product Page
+ * Template Name: Trang CareMIL
  * Template Post Type: page
- * Description: Trang chủ sản phẩm CareMIL với thiết kế đầy đủ
+ * Description: Trang sản phẩm CareMIL với thiết kế đầy đủ
  *
  * @package Caremil
  */
@@ -16,8 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CareMIL - Dinh Dưỡng Chuyên Biệt Cho Trẻ</title>
+    <title>CareMIL - Dinh Dưỡng Chuyên Biệt cho Trẻ Đặc Biệt</title>
     <meta name="description" content="Sữa hạt CareMIL - Giải pháp dinh dưỡng thực vật chuyên biệt cho trẻ có nhu cầu đặc biệt, không Gluten, không Casein, hỗ trợ tiêu hóa và phát triển toàn diện.">
+    <?php wp_head(); ?>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -33,7 +34,8 @@ if ( ! defined( 'ABSPATH' ) ) {
                             soft: '#e0fbfc',
                             cream: '#fffdf2',
                             pink: '#ef476f',
-                            green: '#4ade80'
+                            green: '#4ade80',
+                            metal: '#C5A028' 
                         }
                     },
                     fontFamily: {
@@ -65,7 +67,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     </script>
     <style>
         /* --- General Styles --- */
-        body { padding-top: 32px; } /* Space for disclaimer bar */
+        body/* Space for disclaimer bar */
         .nutrition-table th { font-family: 'Baloo 2', cursive; color: #1a4f8a; white-space: nowrap; }
         .nutrition-table td { font-family: 'Quicksand', sans-serif; font-weight: 600; }
         .overflow-x-auto { -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
@@ -75,9 +77,11 @@ if ( ! defined( 'ABSPATH' ) ) {
         #mobile-menu.open { max-height: 400px; opacity: 1; }
         
         /* Modal & Reveals */
-        #expert-modal { display: none; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); }
-        #expert-modal.show { display: flex; animation: fadeIn 0.3s ease-out; }
+        #expert-modal, #trial-modal { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); }
+        .modal-show { display: flex; animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Scroll Reveal */
         .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
         .reveal.active { opacity: 1; transform: translateY(0); }
         
@@ -91,7 +95,65 @@ if ( ! defined( 'ABSPATH' ) ) {
         
         .sticker { background: white; border: 3px solid #f0f4f8; border-radius: 24px; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .sticker:hover { transform: translateY(-5px); border-color: #ffd166; box-shadow: 0 10px 20px rgba(255, 209, 102, 0.2); }
-        .disclaimer-bar { background: #fff3cd; color: #856404; font-size: 0.75rem; text-align: center; padding: 0.5rem; border-bottom: 1px solid #ffeeba; }
+        .disclaimer-bar { background: #fff3cd; color: #856404; font-size: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid #ffeeba; overflow: hidden; white-space: nowrap; position: relative; }
+        .disclaimer-wrapper { display: flex; width: fit-content; }
+        .disclaimer-content { display: inline-flex; animation: marquee 40s linear infinite; }
+        .disclaimer-content span { display: inline-block; padding-right: 4rem; white-space: nowrap; }
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-50%); }
+        }
+        /* Mobile Responsive for Disclaimer Bar */
+        @media (max-width: 768px) {
+            .disclaimer-bar { font-size: 0.65rem; padding: 0.4rem 0; }
+            .disclaimer-content span { padding-right: 2.5rem; }
+            .disclaimer-content { animation-duration: 35s; }
+        }
+        @media (max-width: 480px) {
+            .disclaimer-bar { font-size: 0.6rem; padding: 0.35rem 0; }
+            .disclaimer-content span { padding-right: 2rem; }
+            .disclaimer-content { animation-duration: 30s; }
+        }
+        
+        /* Form Styles (CareMIL Theme) */
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 12px;
+            border: 2px solid #e0fbfc; /* Soft Blue Border */
+            background-color: #f8fafc;
+            outline: none;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            color: #1a4f8a;
+            transition: all 0.3s ease;
+        }
+        .form-input:focus {
+            border-color: #4cc9f0;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.1);
+        }
+        .form-input::placeholder { color: #94a3b8; font-weight: 500; }
+        .form-label {
+            color: #1a4f8a; /* Brand Navy */
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: block;
+            font-size: 0.95rem;
+        }
+        .gold-gradient-btn {
+            background: linear-gradient(to bottom, #ffd166, #f59e0b); /* Brand Gold */
+            color: #1a4f8a;
+            font-weight: 800;
+            text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 2px solid #fff;
+        }
+        .gold-gradient-btn:hover {
+            background: linear-gradient(to bottom, #f59e0b, #ffd166);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px rgba(255, 209, 102, 0.4);
+        }
         
         /* --- Gut Simulation Animations --- */
         @keyframes organicSway { 
@@ -134,7 +196,6 @@ if ( ! defined( 'ABSPATH' ) ) {
             100% { opacity: 0; transform: scale(2); } 
         }
         
-        /* Simulation Classes */
         .particle { position: absolute; transition: top 3s cubic-bezier(0.4, 0, 0.2, 1); animation: floatChaos 4s infinite ease-in-out; z-index: 15; }
         .particle.leaking { top: 120% !important; z-index: 50; transition: top 2s ease-in !important; }
         .blood-cell { 
@@ -167,12 +228,22 @@ if ( ! defined( 'ABSPATH' ) ) {
         .antibody-svg { width: 100%; height: 100%; fill: none; stroke: #60a5fa; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px rgba(37, 99, 235, 0.5)); }
         .glow-effect { position: absolute; width: 40px; height: 40px; border-radius: 50%; animation: softGlow linear infinite; pointer-events: none; z-index: 5; }
     </style>
+    
 </head>
 <body class="bg-brand-cream text-gray-600 font-sans selection:bg-brand-gold selection:text-white">
 
     <!-- Legal Disclaimer Bar -->
     <div class="fixed bottom-0 left-0 w-full z-[60] disclaimer-bar font-bold">
-        ⚠ Sản phẩm này là thực phẩm bổ sung, không phải là thuốc và không có tác dụng thay thế thuốc chữa bệnh.
+        <div class="disclaimer-wrapper">
+            <div class="disclaimer-content">
+                <span>⚠ Sản phẩm này là thực phẩm tự nhiên, không phải là thuốc và không có tác dụng thay thế thuốc chữa bệnh.</span>
+                <span>💚 Sữa mẹ là thức ăn tốt nhất cho sức khỏe và sự phát triển toàn diện của trẻ sơ sinh và trẻ nhỏ.</span>
+            </div>
+            <div class="disclaimer-content">
+                <span>⚠ Sản phẩm này là thực phẩm tự nhiên, không phải là thuốc và không có tác dụng thay thế thuốc chữa bệnh.</span>
+                <span>💚 Sữa mẹ là thức ăn tốt nhất cho sức khỏe và sự phát triển toàn diện của trẻ sơ sinh và trẻ nhỏ.</span>
+            </div>
+        </div>
     </div>
 
     <!-- 1. NAVIGATION -->
@@ -195,8 +266,8 @@ if ( ! defined( 'ABSPATH' ) ) {
                         <a href="#loi-ich" class="hover:text-brand-blue transition">Lợi Ích</a>
                         <a href="#bang-thanh-phan" class="hover:text-brand-blue transition">Thành Phần</a>
                         <a href="#huong-dan" class="hover:text-brand-blue transition">Cách Dùng</a>
-                        <button onclick="document.getElementById('order').scrollIntoView({behavior: 'smooth'})" class="bg-brand-gold text-white font-bold py-2 px-6 rounded-full shadow-lg hover:bg-yellow-400 hover:scale-105 transition transform flex items-center gap-2">
-                            <i class="fas fa-shopping-cart"></i> Mua Ngay
+                        <button onclick="openTrialModal()" class="bg-brand-navy text-white font-bold py-2 px-6 rounded-full shadow-lg hover:bg-blue-400 hover:scale-105 transition transform flex items-center gap-2 cursor-pointer">
+                            <i class="fas fa-gift"></i> Nhận Quà
                         </button>
                     </div>
                     
@@ -211,8 +282,8 @@ if ( ! defined( 'ABSPATH' ) ) {
                         <a href="#khoa-hoc" onclick="toggleMobileMenu()" class="py-3 hover:text-brand-blue hover:bg-blue-50 rounded-xl transition">Khoa Học</a>
                         <a href="#bang-thanh-phan" onclick="toggleMobileMenu()" class="py-3 hover:text-brand-blue hover:bg-blue-50 rounded-xl transition">Thành Phần</a>
                         <a href="#huong-dan" onclick="toggleMobileMenu()" class="py-3 hover:text-brand-blue hover:bg-blue-50 rounded-xl transition">Cách Dùng</a>
-                        <button onclick="toggleMobileMenu(); document.getElementById('order').scrollIntoView({behavior: 'smooth'})" class="bg-brand-gold text-white py-3 mt-2 rounded-xl shadow-md w-full">
-                            Đặt Mua Ngay
+                        <button onclick="toggleMobileMenu(); openTrialModal()" class="bg-brand-gold text-white py-3 mt-2 rounded-xl shadow-md w-full">
+                            Nhận Quà Dùng Thử
                         </button>
                     </div>
                 </div>
@@ -247,13 +318,13 @@ if ( ! defined( 'ABSPATH' ) ) {
                     </p>
                     
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
-                        <a href="#order" class="bg-brand-pink text-white text-lg font-bold py-4 px-8 rounded-full shadow-lg shadow-pink-200 hover:bg-pink-600 hover:shadow-pink-300 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto group">
-                            <i class="fas fa-comments animate-pulse"></i> 
-                            Tư Vấn Miễn Phí
-                        </a>
-                        <a href="#order" class="bg-white text-brand-navy border-2 border-brand-gold text-lg font-bold py-4 px-8 rounded-full hover:bg-brand-gold hover:text-white transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto shadow-md group">
+                        <button onclick="openTrialModal()" class="bg-brand-pink text-white text-lg font-bold py-4 px-8 rounded-full shadow-lg shadow-pink-200 hover:bg-pink-600 hover:shadow-pink-300 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto group">
                             <i class="fas fa-gift text-brand-gold group-hover:text-white"></i>
                             Đăng Ký Dùng Thử
+                        </button>
+                        <a href="https://www.facebook.com/profile.php?id=61582136323865" target="_blank" rel="noopener" class="bg-white text-brand-navy border-2 border-brand-gold text-lg font-bold py-4 px-8 rounded-full hover:bg-brand-gold hover:text-white transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto shadow-md group">
+                            <i class="fas fa-comments animate-pulse"></i> 
+                            Tư vấn
                         </a>
                     </div>
 
@@ -276,13 +347,12 @@ if ( ! defined( 'ABSPATH' ) ) {
                              alt="Hộp sữa CareMIL - Plant Based" 
                              class="w-full h-auto max-h-[350px] lg:max-h-[500px] object-contain drop-shadow-2xl transform hover:scale-105 transition duration-500 relative z-10">
                         
-                        <!-- Sachet Image (Corrected Position) -->
-                        <div class="absolute -bottom-2 lg:bottom-4 -left-6 lg:-left-16 w-40 lg:w-64 transform rotate-6 hover:rotate-0 transition duration-500 z-20 cursor-pointer group">
+                        <!-- Sachet Image -->
+                        <div onclick="openTrialModal()" class="absolute -bottom-3 lg:bottom-4 -left-4 lg:-left-16 w-40 lg:w-64 transform rotate-6 hover:rotate-0 transition duration-500 z-20 cursor-pointer group">
                             <img src="https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Goi-sua.png" 
                                  alt="Gói dùng thử CareMIL" 
                                  class="w-full drop-shadow-xl group-hover:scale-110 transition">
-                            
-                            <!-- Free Badge -->
+                            <!-- Badge: Miễn Phí (Shortened, moved left) -->
                             <div class="absolute -top-2 -left-4 lg:-top-4 lg:-left-6 bg-brand-pink text-white text-[10px] lg:text-xs font-display font-bold px-2 py-1 lg:px-3 lg:py-1.5 rounded-full shadow-lg animate-wiggle whitespace-nowrap border-2 border-white z-30 flex items-center gap-1">
                                 <i class="fas fa-gift text-brand-gold text-xs lg:text-sm animate-bounce-slow"></i>
                                 <span>Miễn Phí</span>
@@ -298,8 +368,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     <!-- 3. SCIENTIFIC: GUT-BRAIN & LEAKY GUT -->
     <section id="khoa-hoc" class="py-16 lg:py-24 bg-white relative overflow-hidden">
         <div class="container mx-auto px-4 lg:px-6">
-            
-            <!-- 3.1 WHY CHOOSE -->
             <div class="max-w-4xl mx-auto text-center mb-12 lg:mb-16 reveal">
                 <span class="inline-block py-1 px-3 rounded-full bg-brand-blue/10 text-brand-blue font-bold text-sm mb-4">KIẾN THỨC KHOA HỌC</span>
                 <h2 class="text-2xl md:text-4xl lg:text-5xl font-display font-black text-brand-navy mb-8 leading-tight">
@@ -324,9 +392,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                     </div>
                 </div>
             </div>
-
-            <!-- 3.2 SIMULATION -->
-            <div class="max-w-5xl mx-auto bg-slate-50 rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 mb-16 reveal delay-100">
+            <div class="mx-auto bg-slate-50 rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 mb-16 reveal delay-100">
                 <div class="p-4 lg:p-8 text-center bg-white border-b border-slate-100 relative z-10 flex flex-col md:flex-row justify-between items-center gap-4">
                     <h3 class="text-xl md:text-2xl font-display font-bold text-brand-navy flex items-center gap-2"><i class="fas fa-microscope text-brand-blue"></i> Mô Phỏng Cơ Chế</h3>
                     <div class="inline-flex bg-slate-100 p-1 rounded-full shadow-inner gap-1">
@@ -335,7 +401,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                     </div>
                 </div>
                 <div class="relative h-[500px] md:h-[600px] select-none bg-white w-full overflow-hidden" id="gut-visualizer">
-                    <div class="absolute top-0 w-full h-[45%] bg-blue-50/30 z-10 overflow-hidden border-b border-blue-100/50">
+                    <div class="absolute top-0 w-full h-[60%] bg-blue-50/30 z-10 overflow-hidden border-b border-blue-100/50">
                         <div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-bold text-brand-navy border border-blue-100 shadow-sm z-20">LÒNG RUỘT (LUMEN)</div>
                         <div class="absolute top-4 right-4 flex flex-col gap-2 text-[10px] md:text-xs font-bold text-slate-500 bg-white/90 p-3 rounded-xl border border-slate-100 z-20 shadow-sm">
                             <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-yellow-400 animate-wiggle"></div> Gluten</div>
@@ -349,7 +415,9 @@ if ( ! defined( 'ABSPATH' ) ) {
                         <div id="mucosal-cells" class="flex w-full h-full items-end justify-center gap-[1px] transition-all duration-1000"></div>
                     </div>
                     <div class="absolute bottom-0 w-full h-[45%] bg-gradient-to-r from-red-800 via-red-600 to-red-800 z-20 overflow-hidden shadow-[0_-10px_30px_rgba(220,38,38,0.2)]">
+                        <!-- Gradient overlay to soften cell base -->
                         <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-white/50 via-red-100/30 to-transparent z-30 pointer-events-none blur-sm"></div>
+                        
                         <div class="absolute top-4 left-4 bg-red-900/40 backdrop-blur text-white/90 text-xs font-bold uppercase tracking-widest border border-white/20 px-3 py-1 rounded-full z-20">Dòng Máu (Bloodstream)</div>
                         <div id="blood-cells-bg" class="w-full h-full relative z-0"></div>
                         <div id="immune-zone" class="absolute inset-0 z-10 opacity-0 transition-opacity duration-500 pointer-events-none"></div>
@@ -359,47 +427,17 @@ if ( ! defined( 'ABSPATH' ) ) {
                     </div>
                 </div>
             </div>
-
-            <!-- 3.3 HEALTH IMPACT COMPARISON -->
             <div class="max-w-6xl mx-auto reveal delay-200">
                 <h3 id="impact-title" class="text-center text-xl md:text-3xl font-display font-bold text-brand-navy mb-8 transition-all duration-500">
-                    <span class="bg-green-100 text-green-700 px-4 py-1 rounded-full text-sm font-bold uppercase mr-2 align-middle border border-green-200"><i class="fas fa-smile"></i> Tích Cực</span> 
-                    Khi Đường Ruột Được Chữa Lành
+                    <span class="bg-green-100 text-green-700 px-4 py-1 rounded-full text-sm font-bold uppercase mr-2 align-middle border border-green-200"><i class="fas fa-smile"></i> Tích Cực</span> Khi Đường Ruột Được Chữa Lành
                 </h3>
-                
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="impact-grid">
-                    <!-- Cards injected by JS -->
-                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" id="impact-grid"></div>
             </div>
         </div>
-        
         <script>
-            const impactData = {
-                normal: {
-                    titleHTML: '<span class="bg-green-100 text-green-700 px-4 py-1 rounded-full text-sm font-bold uppercase mr-2 align-middle border border-green-200"><i class="fas fa-smile"></i> Tích Cực</span> Khi Đường Ruột Được Chữa Lành',
-                    cards: [
-                        { icon: '😌', title: 'Cảm Xúc Ổn Định', desc: 'Con vui vẻ, giảm cáu gắt, ít các cơn bùng nổ (tantrums) vô cớ.', colorClass: 'border-green-400', iconBg: 'bg-green-50', iconColor: 'text-green-500' },
-                        { icon: '👀', title: 'Tăng Tương Tác', desc: 'Cải thiện giao tiếp mắt (eye contact), chủ động tương tác hơn.', colorClass: 'border-green-400', iconBg: 'bg-green-50', iconColor: 'text-green-500' },
-                        { icon: '🛌', title: 'Ngủ Ngon Giấc', desc: 'Dễ đi vào giấc ngủ, ngủ sâu, ít thức giấc giữa đêm.', colorClass: 'border-green-400', iconBg: 'bg-green-50', iconColor: 'text-green-500' },
-                        { icon: '🧠', title: 'Tăng Tập Trung', desc: 'Giảm "sương mù não", con tỉnh táo và học hỏi tốt hơn.', colorClass: 'border-green-400', iconBg: 'bg-green-50', iconColor: 'text-green-500' },
-                        { icon: '😋', title: 'Tiêu Hóa Khỏe', desc: 'Hết táo bón hoặc tiêu chảy, con chịu ăn đa dạng hơn.', colorClass: 'border-green-400', iconBg: 'bg-green-50', iconColor: 'text-green-500' }
-                    ]
-                },
-                leaky: {
-                    titleHTML: '<span class="bg-red-100 text-red-600 px-4 py-1 rounded-full text-sm font-bold uppercase mr-2 align-middle border border-red-200"><i class="fas fa-exclamation-triangle"></i> Cảnh Báo</span> Tác Động Của Rò Rỉ Ruột & Gluten/Casein',
-                    cards: [
-                        { icon: '😫', title: 'Rối Loạn Hành Vi', desc: 'Tăng động, giảm chú ý (ADHD), hành vi rập khuôn, tự kích thích.', colorClass: 'border-red-400', iconBg: 'bg-red-50', iconColor: 'text-red-500' },
-                        { icon: '🔊', title: 'Rối Loạn Giác Quan', desc: 'Quá nhạy cảm với âm thanh, ánh sáng hoặc xúc giác.', colorClass: 'border-red-400', iconBg: 'bg-red-50', iconColor: 'text-red-500' },
-                        { icon: '😶', title: 'Chậm Ngôn Ngữ', desc: 'Ảnh hưởng đến vùng ngôn ngữ, trẻ chậm nói hoặc lười giao tiếp.', colorClass: 'border-red-400', iconBg: 'bg-red-50', iconColor: 'text-red-500' },
-                        { icon: '😵‍💫', title: 'Sương Mù Não', desc: 'Trẻ lơ đễnh, thiếu tỉnh táo, khó tiếp thu thông tin mới.', colorClass: 'border-red-400', iconBg: 'bg-red-50', iconColor: 'text-red-500' },
-                        { icon: '🤢', title: 'Vấn Đề Tiêu Hóa', desc: 'Đau bụng, đầy hơi, táo bón mãn tính hoặc nôn trớ.', colorClass: 'border-red-400', iconBg: 'bg-red-50', iconColor: 'text-red-500' }
-                    ]
-                }
-            };
-
+            const impactData = { normal: { titleHTML: '<span class="bg-green-100 text-green-700 px-4 py-1 rounded-full text-sm font-bold uppercase mr-2 align-middle border border-green-200"><i class="fas fa-smile"></i> Tích Cực</span> Khi Đường Ruột Được Chữa Lành', cards: [ { icon: '😌', title: 'Cảm Xúc Ổn Định', desc: 'Con vui vẻ, giảm cáu gắt, ít các cơn bùng nổ (tantrums) vô cớ.', colorClass: 'border-green-400', iconBg: 'bg-green-50', iconColor: 'text-green-500' }, { icon: '👀', title: 'Tăng Tương Tác', desc: 'Cải thiện giao tiếp mắt (eye contact), chủ động tương tác hơn.', colorClass: 'border-green-400', iconBg: 'bg-green-50', iconColor: 'text-green-500' }, { icon: '🛌', title: 'Ngủ Ngon Giấc', desc: 'Dễ đi vào giấc ngủ, ngủ sâu, ít thức giấc giữa đêm.', colorClass: 'border-green-400', iconBg: 'bg-green-50', iconColor: 'text-green-500' }, { icon: '🧠', title: 'Tăng Tập Trung', desc: 'Giảm "sương mù não", con tỉnh táo và học hỏi tốt hơn.', colorClass: 'border-green-400', iconBg: 'bg-green-50', iconColor: 'text-green-500' }, { icon: '😋', title: 'Tiêu Hóa Khỏe', desc: 'Hết táo bón hoặc tiêu chảy, con chịu ăn đa dạng hơn.', colorClass: 'border-green-400', iconBg: 'bg-green-50', iconColor: 'text-green-500' } ] }, leaky: { titleHTML: '<span class="bg-red-100 text-red-600 px-4 py-1 rounded-full text-sm font-bold uppercase mr-2 align-middle border border-red-200"><i class="fas fa-exclamation-triangle"></i> Cảnh Báo</span> Tác Động Của Rò Rỉ Ruột & Gluten/Casein', cards: [ { icon: '😫', title: 'Rối Loạn Hành Vi', desc: 'Tăng động, giảm chú ý (ADHD), hành vi rập khuôn, tự kích thích.', colorClass: 'border-red-400', iconBg: 'bg-red-50', iconColor: 'text-red-500' }, { icon: '🔊', title: 'Rối Loạn Giác Quan', desc: 'Quá nhạy cảm với âm thanh, ánh sáng hoặc xúc giác.', colorClass: 'border-red-400', iconBg: 'bg-red-50', iconColor: 'text-red-500' }, { icon: '😶', title: 'Chậm Ngôn Ngữ', desc: 'Ảnh hưởng đến vùng ngôn ngữ, trẻ chậm nói hoặc lười giao tiếp.', colorClass: 'border-red-400', iconBg: 'bg-red-50', iconColor: 'text-red-500' }, { icon: '😵‍💫', title: 'Sương Mù Não', desc: 'Trẻ lơ đễnh, thiếu tỉnh táo, khó tiếp thu thông tin mới.', colorClass: 'border-red-400', iconBg: 'bg-red-50', iconColor: 'text-red-500' }, { icon: '🤢', title: 'Vấn Đề Tiêu Hóa', desc: 'Đau bụng, đầy hơi, táo bón mãn tính hoặc nôn trớ.', colorClass: 'border-red-400', iconBg: 'bg-red-50', iconColor: 'text-red-500' } ] } };
             const gutState = { mode: 'normal' };
             const particleTypes = [ { type: 'gluten', color: 'text-yellow-600 bg-yellow-100 border-yellow-300', icon: '<i class="fas fa-bread-slice"></i>' }, { type: 'toxin', color: 'text-green-700 bg-green-100 border-green-300', icon: '<i class="fas fa-biohazard"></i>' }, { type: 'microbe', color: 'text-purple-700 bg-purple-100 border-purple-300', icon: '<i class="fas fa-bug"></i>' } ];
-            
             function initGutSimulation() {
                 const lumen = document.getElementById('lumen-particles'); lumen.innerHTML = ''; const gapPositions = [12, 25, 37, 50, 62, 75, 87];
                 for(let i=0; i<45; i++) { const p = document.createElement('div'); const pType = particleTypes[Math.floor(Math.random() * particleTypes.length)]; p.className = `particle absolute w-4 h-4 lg:w-6 lg:h-6 rounded-full flex items-center justify-center border ${pType.color} text-[10px] lg:text-xs shadow-sm z-10`; p.innerHTML = pType.icon; const isLeaker = i % 2 !== 0; if (isLeaker) { const gap = gapPositions[Math.floor(Math.random() * gapPositions.length)]; p.style.left = (gap + (Math.random() * 6 - 3)) + '%'; p.style.top = (Math.random() * 30 + 40) + '%'; p.classList.add('will-leak'); } else { p.style.left = Math.random() * 95 + '%'; p.style.top = Math.random() * 40 + '%'; } p.style.animationDuration = (3 + Math.random() * 4) + 's'; p.style.animationDelay = -Math.random() * 5 + 's'; lumen.appendChild(p); }
@@ -410,67 +448,20 @@ if ( ! defined( 'ABSPATH' ) ) {
                 const immuneZone = document.getElementById('immune-zone'); immuneZone.innerHTML = '';
                 for(let i=0; i<12; i++) { const pair = document.createElement('div'); const enemyType = particleTypes[Math.floor(Math.random() * particleTypes.length)]; pair.className = "battle-pair"; pair.style.top = (5 + Math.random() * 75) + '%'; const duration = 5 + Math.random() * 6; pair.style.animationDuration = duration + 's'; pair.style.animationDelay = -Math.random() * 20 + 's'; pair.innerHTML = `<div class="toxin-target w-8 h-8 rounded-full flex items-center justify-center border-2 ${enemyType.color} bg-white shadow-md z-10" style="animation-duration: ${duration}s">${enemyType.icon}</div><div class="antibody-actor" style="animation-duration: ${duration}s"><svg class="antibody-svg" viewBox="0 0 24 24"><path d="M12 22V12 M12 12L5 5 M12 12L19 5" /></svg></div><div class="glow-effect" style="animation-duration: ${duration}s"></div>`; immuneZone.appendChild(pair); }
             }
-
-            function setGutMode(mode) {
-                gutState.mode = mode;
-                const visualizer = document.getElementById('gut-visualizer');
-                const btnNormal = document.getElementById('btn-normal');
-                const btnLeaky = document.getElementById('btn-leaky');
-                const immuneZone = document.getElementById('immune-zone');
-                const immuneAlert = document.getElementById('immune-alert');
-
-                if (mode === 'normal') {
-                    visualizer.classList.remove('mode-leaky');
-                    visualizer.classList.add('mode-normal');
-                    btnNormal.className = "flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-300 bg-white text-brand-blue shadow-md transform scale-105";
-                    btnLeaky.className = "flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-300 text-gray-500 hover:text-gray-800 hover:bg-slate-50";
-                    immuneZone.style.opacity = '0';
-                    immuneAlert.style.opacity = '0';
-                    immuneAlert.style.transform = 'translateY(1rem)';
-                    document.querySelectorAll('.particle').forEach(p => { p.classList.remove('leaking'); p.style.transitionDelay = '0s'; });
-                } else {
-                    visualizer.classList.remove('mode-normal');
-                    visualizer.classList.add('mode-leaky');
-                    btnNormal.className = "flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-300 text-gray-500 hover:text-gray-800 hover:bg-slate-50";
-                    btnLeaky.className = "flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-300 bg-white text-red-500 shadow-md transform scale-105";
-                    immuneZone.style.opacity = '1';
-                    immuneAlert.style.opacity = '1';
-                    immuneAlert.style.transform = 'translateY(0)';
-                    document.querySelectorAll('.particle.will-leak').forEach(p => { setTimeout(() => { if(gutState.mode === 'leaky') { p.classList.add('leaking'); } }, Math.random() * 5000); });
-                }
-
-                const data = impactData[mode];
-                const titleEl = document.getElementById('impact-title');
-                const gridEl = document.getElementById('impact-grid');
-                
-                titleEl.style.opacity = '0';
-                gridEl.style.opacity = '0';
-                
-                setTimeout(() => {
-                    titleEl.innerHTML = data.titleHTML;
-                    gridEl.innerHTML = data.cards.map((card, index) => `
-                        <div class="bg-white rounded-2xl p-6 text-center border-b-4 ${card.colorClass} shadow-sm hover:-translate-y-1 transition duration-300 ${index === 4 ? 'md:col-span-1 lg:col-span-1 col-span-2' : ''}">
-                            <div class="w-14 h-14 mx-auto ${card.iconBg} rounded-full flex items-center justify-center text-3xl mb-3 ${card.iconColor}">${card.icon}</div>
-                            <h4 class="font-bold text-brand-navy text-base mb-2">${card.title}</h4>
-                            <p class="text-sm text-gray-600">${card.desc}</p>
-                        </div>
-                    `).join('');
-                    
-                    titleEl.style.opacity = '1';
-                    gridEl.style.opacity = '1';
-                }, 300);
+            function setGutMode(mode) { gutState.mode = mode; const visualizer = document.getElementById('gut-visualizer'); const btnNormal = document.getElementById('btn-normal'); const btnLeaky = document.getElementById('btn-leaky'); const immuneZone = document.getElementById('immune-zone'); const immuneAlert = document.getElementById('immune-alert');
+                if (mode === 'normal') { visualizer.classList.remove('mode-leaky'); visualizer.classList.add('mode-normal'); btnNormal.className = "flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all bg-white text-brand-blue shadow-md transform scale-105"; btnLeaky.className = "flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all text-gray-500 hover:text-gray-800 hover:bg-slate-50"; immuneZone.style.opacity = '0'; immuneAlert.style.opacity = '0'; immuneAlert.style.transform = 'translateY(1rem)'; document.querySelectorAll('.particle').forEach(p => { p.classList.remove('leaking'); p.style.transitionDelay = '0s'; });
+                } else { visualizer.classList.remove('mode-normal'); visualizer.classList.add('mode-leaky'); btnNormal.className = "flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all text-gray-500 hover:text-gray-800 hover:bg-slate-50"; btnLeaky.className = "flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all bg-white text-red-500 shadow-md transform scale-105"; immuneZone.style.opacity = '1'; immuneAlert.style.opacity = '1'; immuneAlert.style.transform = 'translateY(0)'; document.querySelectorAll('.particle.will-leak').forEach(p => { setTimeout(() => { if(gutState.mode === 'leaky') { p.classList.add('leaking'); } }, Math.random() * 5000); }); }
+                const data = impactData[mode]; const titleEl = document.getElementById('impact-title'); const gridEl = document.getElementById('impact-grid'); titleEl.style.opacity = '0'; gridEl.style.opacity = '0'; setTimeout(() => { titleEl.innerHTML = data.titleHTML; gridEl.innerHTML = data.cards.map((card, index) => `<div class="bg-white rounded-2xl p-6 text-center border-b-4 ${card.colorClass} shadow-sm hover:-translate-y-1 transition duration-300 ${index === 4 ? 'md:col-span-1 lg:col-span-1 col-span-2' : ''}"><div class="w-14 h-14 mx-auto ${card.iconBg} rounded-full flex items-center justify-center text-3xl mb-3 ${card.iconColor}">${card.icon}</div><h4 class="font-bold text-brand-navy text-base mb-2">${card.title}</h4><p class="text-sm text-gray-600">${card.desc}</p></div>`).join(''); titleEl.style.opacity = '1'; gridEl.style.opacity = '1'; }, 300);
             }
-
-            document.addEventListener('DOMContentLoaded', () => {
-                initGutSimulation();
-                setGutMode('normal'); // Default state
+            document.addEventListener('DOMContentLoaded', () => { 
+                initGutSimulation(); 
+                setGutMode('normal');
             });
         </script>
     </section>
 
     <!-- 4. SOLUTION: 8 NOs -->
     <section id="cam-ket" class="py-12 lg:py-20 bg-brand-soft/30 relative">
-        <!-- ... existing content ... -->
         <div class="container mx-auto px-6">
             <div class="text-center max-w-3xl mx-auto mb-10 lg:mb-16 reveal">
                 <div class="inline-block bg-white text-brand-navy px-4 py-1 rounded-full text-xs lg:text-sm font-bold mb-3 border border-brand-blue/20">GIẢI PHÁP AN TOÀN TUYỆT ĐỐI</div>
@@ -530,7 +521,102 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
     </section>
 
-    <!-- NEW SECTION: PRODUCT VARIANTS (Podium Display) -->
+    <!-- 7. INGREDIENTS OVERVIEW -->
+    <section id="thanh-phan" class="py-12 lg:py-24 bg-brand-soft relative overflow-hidden">
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="text-center mb-10 reveal">
+                <h2 class="text-2xl md:text-3xl lg:text-5xl font-display font-black text-brand-navy mb-4">Khu Vườn Dinh Dưỡng</h2>
+                <p class="text-sm lg:text-lg text-gray-600">Khám phá những dưỡng chất "vàng" được chắt lọc.</p>
+            </div>
+            <div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+                <div class="order-1 lg:order-2 lg:w-1/3 relative flex justify-center py-6 lg:py-0 reveal">
+                     <div class="absolute inset-0 flex items-center justify-center"><div class="w-64 h-64 lg:w-[500px] lg:h-[500px] bg-white rounded-full opacity-60 animate-pulse"></div></div>
+                     <img src="https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Hop-sua.png" onerror="this.src='https://placehold.co/500x700/e0fbfc/1a4f8a?text=Product&font=baloo2'" alt="CareMIL Product" class="relative z-10 w-60 md:w-72 lg:w-96 drop-shadow-2xl transform hover:scale-105 transition duration-500">
+                </div>
+                <div class="order-2 lg:order-1 lg:w-1/3 space-y-4 lg:space-y-6 w-full">
+                    <div class="bg-white p-4 lg:p-6 rounded-2xl lg:rounded-3xl shadow-soft flex items-center gap-4 border-l-4 lg:border-l-8 border-green-400 reveal delay-100"><div class="w-10 h-10 lg:w-12 lg:h-12 bg-green-100 rounded-full flex-shrink-0 flex items-center justify-center text-xl lg:text-2xl">🥜</div><div><h3 class="font-display font-bold text-base lg:text-lg text-brand-navy">Pea Protein Isolate</h3><p class="text-xs lg:text-sm text-gray-500">Đạm Đậu Hà Lan giúp bé tăng cân, chắc cơ.</p></div></div>
+                    <div class="bg-white p-4 lg:p-6 rounded-2xl lg:rounded-3xl shadow-soft flex items-center gap-4 border-l-4 lg:border-l-8 border-yellow-400 reveal delay-200"><div class="w-10 h-10 lg:w-12 lg:h-12 bg-yellow-100 rounded-full flex-shrink-0 flex items-center justify-center text-xl lg:text-2xl">🥥</div><div><h3 class="font-display font-bold text-base lg:text-lg text-brand-navy">MCT Oil</h3><p class="text-xs lg:text-sm text-gray-500">Chất béo tốt từ dừa, hấp thu nhanh, tốt cho não bộ.</p></div></div>
+                </div>
+                <div class="order-3 lg:order-3 lg:w-1/3 space-y-4 lg:space-y-6 w-full">
+                    <div class="bg-white p-4 lg:p-6 rounded-2xl lg:rounded-3xl shadow-soft flex items-center gap-4 border-r-4 lg:border-r-8 border-brand-blue reveal delay-100"><div class="lg:hidden w-10 h-10 bg-blue-100 rounded-full flex-shrink-0 flex items-center justify-center text-xl">🛡️</div><div class="flex-grow lg:text-right"><h3 class="font-display font-bold text-base lg:text-lg text-brand-navy">24 Vitamin & Khoáng</h3><p class="text-xs lg:text-sm text-gray-500">Kẽm, Canxi, Vitamin D3 tăng đề kháng.</p></div><div class="hidden lg:flex w-12 h-12 bg-blue-100 rounded-full flex-shrink-0 items-center justify-center text-2xl">🛡️</div></div>
+                    <div class="bg-white p-4 lg:p-6 rounded-2xl lg:rounded-3xl shadow-soft flex items-center gap-4 border-r-4 lg:border-r-8 border-brand-pink reveal delay-200"><div class="lg:hidden w-10 h-10 bg-pink-100 rounded-full flex-shrink-0 flex items-center justify-center text-xl">🍦</div><div class="flex-grow lg:text-right"><h3 class="font-display font-bold text-base lg:text-lg text-brand-navy">Hương Vani Tự Nhiên</h3><p class="text-xs lg:text-sm text-gray-500">Thơm dịu, ngọt nhẹ, bé nào cũng thích.</p></div><div class="hidden lg:flex w-12 h-12 bg-pink-100 rounded-full flex-shrink-0 items-center justify-center text-2xl">🍦</div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW SECTION: USP TRIO (Lysine, Choline, Glutamine) -->
+    <section class="py-16 lg:py-24 bg-gradient-to-b from-white to-blue-50 relative">
+        <div class="container mx-auto px-6">
+            <div class="text-center max-w-3xl mx-auto mb-12 lg:mb-16 reveal">
+                <h2 class="text-2xl md:text-3xl lg:text-5xl font-display font-black text-brand-navy mb-4">
+                    Bộ 3 Dưỡng Chất Vàng <br>
+                    <span class="text-brand-blue">Hỗ Trợ Trí Não & Thể Chất</span>
+                </h2>
+                <p class="text-sm lg:text-lg text-gray-600">Công thức đặc biệt bổ sung các axit amin thiết yếu giúp trẻ phát triển toàn diện.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
+                <!-- Card 1 -->
+                <div class="bg-white rounded-[30px] p-8 shadow-xl border-t-4 border-brand-blue hover:-translate-y-2 transition duration-300 reveal delay-100 flex flex-col items-center text-center">
+                    <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-4xl mb-6 text-brand-blue shadow-inner"><i class="fas fa-smile-beam"></i></div>
+                    <h3 class="text-2xl font-display font-bold text-brand-blue mb-4">L-lysine</h3>
+                    <ul class="text-left space-y-3 w-full"><li class="flex items-start gap-3 text-gray-600"><i class="fas fa-check-circle text-brand-gold mt-1 flex-shrink-0"></i><span><strong>Giảm Lo Âu:</strong> Giúp trẻ thư giãn, giảm căng thẳng thần kinh.</span></li><li class="flex items-start gap-3 text-gray-600"><i class="fas fa-check-circle text-brand-gold mt-1 flex-shrink-0"></i><span><strong>Tăng Cơ Bắp:</strong> Hỗ trợ tổng hợp protein, xây dựng khối cơ.</span></li><li class="flex items-start gap-3 text-gray-600"><i class="fas fa-check-circle text-brand-gold mt-1 flex-shrink-0"></i><span><strong>Kích Thích Ăn Ngon:</strong> Tăng cảm giác thèm ăn tự nhiên.</span></li></ul>
+                </div>
+                <!-- Card 2 -->
+                <div class="bg-white rounded-[30px] p-8 shadow-xl border-t-4 border-blue-600 hover:-translate-y-2 transition duration-300 reveal delay-200 flex flex-col items-center text-center transform lg:scale-105 z-10 relative">
+                    <div class="absolute -top-5 left-1/2 -translate-x-1/2 bg-brand-gold text-brand-navy text-xs font-bold px-4 py-1 rounded-full shadow-md">QUAN TRỌNG CHO NÃO BỘ</div>
+                    <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-4xl mb-6 text-white shadow-lg"><i class="fas fa-brain"></i></div>
+                    <h3 class="text-2xl font-display font-bold text-blue-800 mb-4">Choline</h3>
+                    <ul class="text-left space-y-3 w-full"><li class="flex items-start gap-3 text-gray-600"><i class="fas fa-check-circle text-brand-gold mt-1 flex-shrink-0"></i><span><strong>Kỹ Năng Vận Động:</strong> Cải thiện sự phối hợp giữa não bộ và cơ bắp.</span></li><li class="flex items-start gap-3 text-gray-600"><i class="fas fa-check-circle text-brand-gold mt-1 flex-shrink-0"></i><span><strong>Phát Triển Nhận Thức:</strong> Tăng cường trí nhớ và khả năng tập trung.</span></li></ul>
+                </div>
+                <!-- Card 3 -->
+                <div class="bg-white rounded-[30px] p-8 shadow-xl border-t-4 border-purple-500 hover:-translate-y-2 transition duration-300 reveal delay-300 flex flex-col items-center text-center">
+                    <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center text-4xl mb-6 text-purple-600 shadow-inner"><i class="fas fa-shield-alt"></i></div>
+                    <h3 class="text-2xl font-display font-bold text-purple-600 mb-4">L-glutamine</h3>
+                    <ul class="text-left space-y-3 w-full"><li class="flex items-start gap-3 text-gray-600"><i class="fas fa-check-circle text-brand-gold mt-1 flex-shrink-0"></i><span><strong>Tăng Cường Miễn Dịch:</strong> Củng cố hàng rào bảo vệ cơ thể.</span></li><li class="flex items-start gap-3 text-gray-600"><i class="fas fa-check-circle text-brand-gold mt-1 flex-shrink-0"></i><span><strong>Phục Hồi Đường Ruột:</strong> Hỗ trợ tái tạo niêm mạc ruột, giảm viêm nhiễm.</span></li></ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. FIBREGUM SPOTLIGHT -->
+    <section class="py-16 lg:py-24 bg-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-1/2 h-full bg-brand-soft/30 -skew-x-12 transform origin-top-right z-0"></div>
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+                <div class="lg:w-1/2 relative reveal">
+                    <div class="relative bg-gradient-to-br from-green-50 to-white border-2 border-green-100 rounded-[40px] p-8 lg:p-12 shadow-xl">
+                        <div class="text-center mb-8">
+                            <h3 class="text-4xl lg:text-6xl font-sans font-thin text-green-600 tracking-tighter mb-2">Fibregum<span class="text-lg align-top">™</span></h3>
+                            <div class="h-1 w-24 bg-brand-gold mx-auto rounded-full"></div>
+                        </div>
+                        <div class="flex justify-center mb-8">
+                            <div class="w-48 h-48 bg-green-100 rounded-full flex items-center justify-center text-8xl text-green-600 relative overflow-hidden border-4 border-white shadow-inner">
+                                <i class="fas fa-tree"></i><div class="absolute top-4 right-4 text-brand-gold text-4xl animate-spin-slow"><i class="fas fa-sun"></i></div>
+                            </div>
+                        </div>
+                        <div class="absolute -bottom-6 -right-6 bg-white py-3 px-6 rounded-2xl shadow-lg border border-gray-100 flex items-center gap-3 animate-bounce-slow">
+                            <span class="text-3xl">🇫🇷</span>
+                            <div class="text-left"><p class="text-xs font-bold text-gray-400 uppercase">Trademark of</p><p class="text-brand-navy font-bold font-display">Nexira, France</p></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-1/2 space-y-6 reveal delay-200">
+                    <div class="inline-block bg-green-100 text-green-700 px-4 py-2 rounded-full font-bold text-sm mb-2"><i class="fas fa-star mr-2"></i> Thành Phần Vàng</div>
+                    <h2 class="text-3xl md:text-4xl lg:text-5xl font-display font-black text-brand-navy leading-tight">Chất Xơ Thế Hệ Mới <br><span class="text-green-500">Nuôi Dưỡng Đường Ruột</span></h2>
+                    <p class="text-lg text-gray-600 leading-relaxed"><strong>Fibregum™</strong> là chất xơ hòa tan 100% từ thực vật (cây Acacia), nhập khẩu từ Pháp. Giải pháp tiêu hóa vượt trội cho trẻ nhạy cảm.</p>
+                    <ul class="space-y-4 mt-6">
+                        <li class="flex items-start gap-4"><div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-500 flex-shrink-0 text-xl"><i class="fas fa-leaf"></i></div><div><h4 class="font-bold text-brand-navy text-lg">Siêu Prebiotic</h4><p class="text-sm text-gray-500">Thức ăn cho lợi khuẩn, cân bằng hệ vi sinh.</p></div></li>
+                        <li class="flex items-start gap-4"><div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-brand-blue flex-shrink-0 text-xl"><i class="fas fa-check-double"></i></div><div><h4 class="font-bold text-brand-navy text-lg">Dung Nạp Tốt</h4><p class="text-sm text-gray-500">Êm bụng, không gây đầy hơi, chướng bụng.</p></div></li>
+                        <li class="flex items-start gap-4"><div class="w-10 h-10 rounded-full bg-yellow-50 flex items-center justify-center text-brand-gold flex-shrink-0 text-xl"><i class="fas fa-shield-cat"></i></div><div><h4 class="font-bold text-brand-navy text-lg">Bảo Vệ Niêm Mạc</h4><p class="text-sm text-gray-600">Củng cố hàng rào bảo vệ ruột, ngăn ngừa rò rỉ ruột.</p></div></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW SECTION: PRODUCT VARIANTS (Podium) -->
     <section id="san-pham" class="py-16 lg:py-24 bg-gradient-to-b from-blue-50 to-white relative overflow-hidden">
         <div class="container mx-auto px-6 relative z-10">
             <div class="text-center mb-12 lg:mb-16 reveal">
@@ -543,63 +629,35 @@ if ( ! defined( 'ABSPATH' ) ) {
                 
                 <!-- Product 1: Can 800g -->
                 <div class="flex flex-col items-center group reveal delay-100 relative">
-                    <!-- Background Glow -->
                     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-100 rounded-full filter blur-3xl opacity-0 group-hover:opacity-50 transition duration-700"></div>
-                    
                     <div class="relative w-full flex justify-center items-end h-[350px] lg:h-[450px] mb-8 perspective-1000">
-                        <!-- Podium Base -->
                         <div class="absolute bottom-0 w-56 lg:w-72 h-16 bg-gradient-to-b from-white to-gray-200 rounded-[100%] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-t border-white z-0 group-hover:scale-110 transition duration-700 ease-out"></div>
-                        <!-- Product Image -->
-                        <img src="https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Hop-sua.png" 
-                             class="relative z-10 w-52 lg:w-72 drop-shadow-2xl transform group-hover:-translate-y-6 transition duration-700 ease-out" 
-                             alt="CareMIL Hộp 800g">
-                        
-                        <!-- Badge -->
-                        <div class="absolute top-10 right-10 bg-brand-gold text-brand-navy font-bold text-xs px-3 py-1 rounded-full shadow-md animate-bounce-slow z-20">
-                            Tiết Kiệm
-                        </div>
+                        <img src="https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Hop-sua.png" class="relative z-10 w-52 lg:w-72 drop-shadow-2xl transform group-hover:-translate-y-6 transition duration-700 ease-out" alt="CareMIL Hộp 800g">
+                        <div class="absolute top-10 right-10 bg-brand-gold text-brand-navy font-bold text-xs px-3 py-1 rounded-full shadow-md animate-bounce-slow z-20">Tiết Kiệm</div>
                     </div>
-                    
                     <h3 class="text-2xl lg:text-3xl font-display font-black text-brand-navy mb-2">Hộp Thiếc 800g</h3>
                     <p class="text-gray-500 text-sm lg:text-base mb-6 text-center px-8 max-w-sm">Giải pháp dinh dưỡng kinh tế cho bé sử dụng hàng ngày tại nhà. Bảo quản tốt, dễ dàng pha chế.</p>
-                    
-                    <button onclick="document.getElementById('order').scrollIntoView({behavior: 'smooth'})" class="bg-white border-2 border-brand-blue text-brand-blue font-bold py-3 px-8 rounded-full shadow-sm hover:bg-brand-blue hover:text-white transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2">
-                        <i class="fas fa-cart-plus"></i> Đặt Mua Hộp
-                    </button>
+                    <button onclick="document.getElementById('order').scrollIntoView({behavior: 'smooth'})" class="bg-white border-2 border-brand-blue text-brand-blue font-bold py-3 px-8 rounded-full shadow-sm hover:bg-brand-blue hover:text-white transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2"><i class="fas fa-cart-plus"></i> Đặt Mua Hộp</button>
                 </div>
 
                 <!-- Product 2: Sachet 36g -->
                 <div class="flex flex-col items-center group reveal delay-200 relative">
-                    <!-- Background Glow -->
                     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-pink-100 rounded-full filter blur-3xl opacity-0 group-hover:opacity-50 transition duration-700"></div>
-                    
                     <div class="relative w-full flex justify-center items-end h-[350px] lg:h-[450px] mb-8 perspective-1000">
-                         <!-- Podium Base -->
                          <div class="absolute bottom-0 w-48 lg:w-64 h-14 bg-gradient-to-b from-white to-gray-200 rounded-[100%] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-t border-white z-0 group-hover:scale-110 transition duration-700 ease-out"></div>
-                         <!-- Product Image -->
-                        <img src="https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Goi-sua.png" 
-                             class="relative z-10 w-40 lg:w-56 drop-shadow-2xl transform rotate-6 group-hover:rotate-0 group-hover:-translate-y-6 transition duration-700 ease-out" 
-                             alt="CareMIL Gói 36g">
-                        
-                        <!-- Badge -->
-                        <div class="absolute top-20 right-16 bg-brand-pink text-white font-bold text-xs px-3 py-1 rounded-full shadow-md animate-wiggle z-20">
-                            Tiện Lợi
-                        </div>
+                        <img src="https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/3-Goi-sua.png" class="relative z-10 w-40 lg:w-56 drop-shadow-2xl transform group-hover:rotate-0 group-hover:-translate-y-6 transition duration-700 ease-out" alt="CareMIL Gói 36g">
+                        <div class="absolute top-40 right-16 bg-brand-pink text-white font-bold text-xs px-3 py-1 rounded-full shadow-md animate-wiggle z-20">Tiện Lợi</div>
                     </div>
-                    
                     <h3 class="text-2xl lg:text-3xl font-display font-black text-brand-navy mb-2">Gói Tiện Lợi 36g</h3>
                     <p class="text-gray-500 text-sm lg:text-base mb-6 text-center px-8 max-w-sm">1 gói = 1 lần pha chuẩn (180ml). Hoàn hảo để mang đi học, đi du lịch hoặc cho bé dùng thử.</p>
-                    
-                    <button onclick="document.getElementById('order').scrollIntoView({behavior: 'smooth'})" class="bg-brand-pink text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-pink-600 transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2">
-                        <i class="fas fa-gift"></i> Đăng Ký Dùng Thử
-                    </button>
+                    <button onclick="openTrialModal()" class="bg-brand-pink text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-pink-600 transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2"><i class="fas fa-gift"></i> Đăng Ký Dùng Thử</button>
                 </div>
 
             </div>
         </div>
     </section>
 
-    <!-- 9. DETAILED INGREDIENTS -->
+    <!-- 9. DETAILED INGREDIENTS (Gatekeeper) -->
     <section id="bang-thanh-phan" class="py-12 lg:py-20 bg-white relative">
         <div class="container mx-auto px-4 lg:px-6">
             <div class="text-center mb-8 lg:mb-10 reveal">
@@ -625,27 +683,19 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <div id="content-nutrition" class="tab-content active">
                         <h3 class="text-lg lg:text-2xl font-display font-bold text-brand-navy mb-2 text-center">Thông Tin Dinh Dưỡng</h3>
                         <p class="text-center text-gray-500 mb-4 lg:mb-6 font-medium text-xs lg:text-base">Serving Size: 3 scoops (36g) • Servings: 22</p>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse nutrition-table bg-white rounded-xl lg:rounded-2xl overflow-hidden shadow-sm text-xs md:text-sm lg:text-base min-w-[500px]">
-                                <thead class="bg-brand-blue text-white"><tr><th class="p-3 lg:p-4">Thành phần</th><th class="p-3 lg:p-4 text-center">Đơn vị</th><th class="p-3 lg:p-4 text-right">Per 100g</th><th class="p-3 lg:p-4 text-right">Per Serving</th></tr></thead>
-                                <tbody class="text-gray-600">
-                                    <tr class="border-b hover:bg-blue-50"><td class="p-3 lg:p-4 font-bold text-brand-navy">Energy</td><td class="p-3 lg:p-4 text-center">kcal</td><td class="p-3 lg:p-4 text-right">389</td><td class="p-3 lg:p-4 text-right">140</td></tr>
-                                    <tr class="border-b hover:bg-blue-50 bg-gray-50/50"><td class="p-3 lg:p-4 font-bold">Fat</td><td class="p-3 lg:p-4 text-center">g</td><td class="p-3 lg:p-4 text-right">11.5</td><td class="p-3 lg:p-4 text-right">4.1</td></tr>
-                                    <tr class="border-b hover:bg-blue-50"><td class="p-3 lg:p-4 font-bold">MCT Oil (added)</td><td class="p-3 lg:p-4 text-center">-</td><td class="p-3 lg:p-4 text-right">Included</td><td class="p-3 lg:p-4 text-right">Included</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        <div class="overflow-x-auto"><table class="w-full text-left border-collapse nutrition-table bg-white rounded-xl lg:rounded-2xl overflow-hidden shadow-sm text-xs md:text-sm lg:text-base min-w-[500px]"><thead class="bg-brand-blue text-white"><tr><th class="p-3 lg:p-4">Thành phần</th><th class="p-3 lg:p-4 text-center">Đơn vị</th><th class="p-3 lg:p-4 text-right">Per 100g</th><th class="p-3 lg:p-4 text-right">Per Serving</th></tr></thead><tbody class="text-gray-600"><tr class="border-b hover:bg-blue-50"><td class="p-3 lg:p-4 font-bold text-brand-navy">Energy</td><td class="p-3 lg:p-4 text-center">kcal</td><td class="p-3 lg:p-4 text-right">389</td><td class="p-3 lg:p-4 text-right">140</td></tr><tr class="border-b hover:bg-blue-50 bg-gray-50/50"><td class="p-3 lg:p-4 font-bold">Fat</td><td class="p-3 lg:p-4 text-center">g</td><td class="p-3 lg:p-4 text-right">11.5</td><td class="p-3 lg:p-4 text-right">4.1</td></tr><tr class="border-b hover:bg-blue-50"><td class="p-3 lg:p-4 font-bold">MCT Oil (added)</td><td class="p-3 lg:p-4 text-center">-</td><td class="p-3 lg:p-4 text-right">Included</td><td class="p-3 lg:p-4 text-right">Included</td></tr></tbody></table></div>
                     </div>
                     <div id="content-vitamins" class="tab-content"><h3 class="text-lg lg:text-2xl font-display font-bold text-brand-navy mb-4 lg:mb-6 text-center">24 Vitamin & Khoáng Chất</h3><div class="overflow-x-auto"><table class="w-full text-left border-collapse nutrition-table bg-white rounded-xl lg:rounded-2xl overflow-hidden shadow-sm text-xs md:text-sm lg:text-base min-w-[500px]"><thead class="bg-brand-blue text-white"><tr><th class="p-3 lg:p-4">Thành phần</th><th class="p-3 lg:p-4 text-center">Đơn vị</th><th class="p-3 lg:p-4 text-right">Per 100g</th><th class="p-3 lg:p-4 text-right">Per Serving</th></tr></thead><tbody class="text-gray-600"><tr class="border-b hover:bg-blue-50"><td class="p-3 lg:p-4 font-bold">Vitamin A</td><td class="p-3 lg:p-4 text-center">mcg</td><td class="p-3 lg:p-4 text-right">540.0</td><td class="p-3 lg:p-4 text-right">194.4</td></tr><tr class="border-b hover:bg-blue-50"><td class="p-3 lg:p-4 font-bold">Folic Acid (Vit B9)</td><td class="p-3 lg:p-4 text-center">mcg</td><td class="p-3 lg:p-4 text-right">165.0</td><td class="p-3 lg:p-4 text-right">59.4</td></tr></tbody></table></div></div>
                     <div id="content-minerals" class="tab-content"><h3 class="text-lg lg:text-2xl font-display font-bold text-brand-navy mb-4 lg:mb-6 text-center">Khoáng Chất Thiết Yếu</h3><div class="overflow-x-auto"><table class="w-full text-left border-collapse nutrition-table bg-white rounded-xl lg:rounded-2xl overflow-hidden shadow-sm text-xs md:text-sm lg:text-base min-w-[500px]"><thead class="bg-brand-blue text-white"><tr><th class="p-3 lg:p-4">Thành phần</th><th class="p-3 lg:p-4 text-center">Đơn vị</th><th class="p-3 lg:p-4 text-right">Per 100g</th><th class="p-3 lg:p-4 text-right">Per Serving</th></tr></thead><tbody class="text-gray-600"><tr class="border-b hover:bg-blue-50 bg-gray-50/50"><td class="p-3 lg:p-4 font-bold text-brand-navy">Calcium</td><td class="p-3 lg:p-4 text-center">mg</td><td class="p-3 lg:p-4 text-right font-bold">535.7</td><td class="p-3 lg:p-4 text-right font-bold">192.9</td></tr></tbody></table></div></div>
-                    <div id="content-other" class="tab-content"><h3 class="text-lg lg:text-2xl font-display font-bold text-brand-navy mb-4 lg:mb-6 text-center">Thành Phần Khác</h3><div class="overflow-x-auto"><table class="w-full text-left border-collapse nutrition-table bg-white rounded-xl lg:rounded-2xl overflow-hidden shadow-sm text-xs md:text-sm lg:text-base min-w-[500px]"><thead class="bg-brand-blue text-white"><tr><th class="p-3 lg:p-4">Thành phần</th><th class="p-3 lg:p-4 text-center">Đơn vị</th><th class="p-3 lg:p-4 text-right">Per 100g</th><th class="p-3 lg:p-4 text-right">Per Serving</th></tr></thead><tbody class="text-gray-600"><tr class="border-b hover:bg-blue-50"><td class="p-3 lg:p-4 font-bold text-brand-navy">Probiotic (L. acidophilus & B. lactis)</td><td class="p-3 lg:p-4 text-center">cfu</td><td class="p-3 lg:p-4 text-right">1 x 10<sup>9</sup></td><td class="p-3 lg:p-4 text-right">360 x 10<sup>6</sup></td></tr></tbody></table></div><div class="mt-4 lg:mt-8 pt-4 border-t border-gray-100 text-center"><p class="text-xs lg:text-sm text-gray-500 italic mb-2">Thành phần: Pea Protein Isolate, Vegetable Oil (Sunflower, MCT, Canola), Fibregum™, Vanilla.</p></div></div>
+                    <div id="content-other" class="tab-content"><h3 class="text-lg lg:text-2xl font-display font-bold text-brand-navy mb-4 lg:mb-6 text-center">Thành Phần Khác</h3><div class="overflow-x-auto"><table class="w-full text-left border-collapse nutrition-table bg-white rounded-xl lg:rounded-2xl overflow-hidden shadow-sm text-xs md:text-sm lg:text-base min-w-[500px]"><thead class="bg-brand-blue text-white"><tr><th class="p-3 lg:p-4">Thành phần</th><th class="p-3 lg:p-4 text-center">Đơn vị</th><th class="p-3 lg:p-4 text-right">Per 100g</th><th class="p-3 lg:p-4 text-right">Per Serving</th></tr></thead><tbody class="text-gray-600"><tr class="border-b hover:bg-blue-50"><td class="p-3 lg:p-4 font-bold text-brand-navy">Probiotic (L. acidophilus & B. lactis)</td><td class="p-3 lg:p-4 text-center">cfu</td><td class="p-3 lg:p-4 text-right">1 x 10<sup>9</sup></td><td class="p-3 lg:p-4 text-right">360 x 10<sup>6</sup></td></tr></tbody></table></div><div class="mt-4 lg:mt-8 pt-4 border-t border-gray-100 text-center"><p class="text-xs lg:text-sm text-gray-500 italic mb-2">Thành phần: Pea Protein Isolate, Vegetable Oil, Fibregum™, Vanilla.</p></div></div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 10. PREPARATION & USAGE -->
+    <!-- 10. PREPARATION -->
     <section id="huong-dan" class="py-12 lg:py-24 bg-white relative overflow-hidden">
+        <!-- ... same content as before ... -->
         <div class="container mx-auto px-6 text-center relative z-10">
             <h2 class="text-2xl md:text-3xl lg:text-5xl font-display font-black text-brand-navy mb-3 lg:mb-4 reveal">Pha Sữa Đúng Chuẩn</h2>
             <p class="text-sm lg:text-lg text-gray-500 mb-8 lg:mb-16 max-w-2xl mx-auto reveal">4 bước đơn giản để có ly sữa thơm ngon.</p>
@@ -679,24 +729,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     </section>
 
     <!-- 12. FOOTER -->
-    <!-- Footer -->
     <footer class="bg-white pt-12 lg:pt-20 pb-8 lg:pb-10 mt-0 relative" id="order">
         <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-blue via-brand-pink to-brand-gold"></div>
         <div class="container mx-auto px-6">
-            <!-- CTA Box -->
-            <div class="bg-brand-soft rounded-3xl lg:rounded-[50px] p-8 lg:p-16 relative overflow-hidden mb-12 shadow-soft text-center reveal">
-                <div class="relative z-10 max-w-2xl mx-auto">
-                    <h2 class="text-2xl md:text-3xl lg:text-5xl font-display font-black text-brand-navy mb-3 lg:mb-4">Tư Vấn Dinh Dưỡng</h2>
-                    <p class="text-sm lg:text-xl text-gray-600 mb-6 lg:mb-8 font-medium">Để lại thông tin để nhận tư vấn miễn phí từ chuyên gia CareMIL.</p>
-                    <form class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <input type="text" placeholder="Số điện thoại của mẹ..." class="px-6 py-3 lg:py-4 rounded-full text-gray-700 bg-white border-2 border-white focus:outline-none focus:border-brand-blue shadow-sm w-full sm:w-80 font-bold">
-                        <button type="button" class="bg-brand-pink text-white font-bold py-3 lg:py-4 px-8 lg:px-10 rounded-full shadow-lg hover:bg-pink-500 transition hover:scale-105 whitespace-nowrap mt-2 sm:mt-0">
-                            ĐĂNG KÝ NGAY
-                        </button>
-                    </form>
-                </div>
-            </div>
-            
             <!-- Footer Content -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 border-t border-gray-100 pt-8 lg:pt-12 text-center lg:text-left">
                 
@@ -766,13 +801,15 @@ if ( ! defined( 'ABSPATH' ) ) {
             </div>
             
             <div class="pt-8 text-center text-gray-400 text-xs lg:text-sm font-medium border-t border-gray-100 mt-8">
-                &copy; 2024 CareMIL Vietnam. All rights reserved.
+                &copy; 2025 DawnBridge Vietnam. All rights reserved.
             </div>
         </div>
     </footer>
 
-    <!-- Expert Modal -->
-    <div id="expert-modal" class="fixed inset-0 z-[100] items-center justify-center p-4">
+    <!-- 13. MODALS -->
+    
+    <!-- Expert Confirmation Modal -->
+    <div id="expert-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 lg:p-8 text-center relative border-4 border-brand-blue mx-4">
             <div class="w-16 h-16 lg:w-20 lg:h-20 bg-brand-blue/10 rounded-full flex items-center justify-center mx-auto mb-4 lg:mb-6 text-3xl lg:text-4xl text-brand-blue"><i class="fas fa-user-shield"></i></div>
             <h3 class="text-xl lg:text-2xl font-display font-black text-brand-navy mb-3 lg:mb-4">Thông Báo Quan Trọng</h3>
@@ -781,15 +818,73 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
     </div>
 
+    <!-- TRIAL REGISTRATION FORM MODAL (Updated Visual) -->
+    <div id="trial-modal" class="fixed inset-0 z-[110] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-white rounded-[30px] shadow-2xl max-w-lg w-full p-6 lg:p-10 relative border-4 border-brand-soft my-8">
+            <button onclick="closeTrialModal()" class="absolute top-4 right-4 text-gray-400 hover:text-brand-navy transition text-2xl"><i class="fas fa-times"></i></button>
+            
+            <h3 class="text-2xl lg:text-3xl font-display font-black text-brand-navy text-center mb-6 border-b-4 border-brand-gold inline-block w-full pb-2">ĐĂNG KÝ NHẬN QUÀ</h3>
+            
+            <form class="space-y-4" data-caremil-trial-form data-caremil-source="modal" data-caremil-close-on-success="true">
+                <div>
+                    <label class="form-label">Họ và tên</label>
+                    <input type="text" name="caremil_name" class="form-input" placeholder="Vui lòng nhập họ và tên" data-caremil-required>
+                    <p class="text-red-500 text-xs mt-1 italic hidden" data-caremil-error="caremil_name">Vui lòng nhập họ và tên.</p>
+                </div>
+                <div>
+                    <label class="form-label">Tỉnh/Thành Phố</label>
+                    <input type="text" name="caremil_city" class="form-input" placeholder="Vui lòng nhập Tỉnh/Thành phố bạn đang ở" data-caremil-required>
+                    <p class="text-red-500 text-xs mt-1 italic hidden" data-caremil-error="caremil_city">Vui lòng nhập Tỉnh/Thành phố.</p>
+                </div>
+                <div>
+                    <label class="form-label">Địa chỉ</label>
+                    <input type="text" name="caremil_address" class="form-input" placeholder="Số nhà, tên đường, phường" data-caremil-required>
+                    <p class="text-red-500 text-xs mt-1 italic hidden" data-caremil-error="caremil_address">Vui lòng nhập địa chỉ.</p>
+                </div>
+                <div>
+                    <label class="form-label">Số điện thoại</label>
+                    <input type="tel" name="caremil_phone" class="form-input" placeholder="Nhập số điện thoại" required data-caremil-required>
+                    <p class="text-red-500 text-xs mt-1 italic hidden" data-caremil-error="caremil_phone">Vui lòng nhập số điện thoại.</p>
+                </div>
+
+                <div class="space-y-2 mt-4 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <label class="flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" name="caremil_terms" class="mt-1 w-4 h-4 accent-brand-gold">
+                        <span class="text-brand-navy text-xs lg:text-sm font-medium">Tôi đồng ý với <u class="hover:text-brand-blue">Thể lệ và Điều khoản chương trình</u></span>
+                    </label>
+                    <label class="flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" name="caremil_privacy" class="mt-1 w-4 h-4 accent-brand-gold">
+                        <span class="text-brand-navy text-xs lg:text-sm font-medium">Tôi đã đọc và đồng ý với <u class="hover:text-brand-blue">mẫu chấp thuận</u> của DawnBridge</u></span>
+                    </label>
+                </div>
+
+                <div class="pt-4 space-y-2">
+                    <button type="submit" data-caremil-submit class="w-full py-3.5 rounded-xl gold-gradient-btn text-lg shadow-lg transform hover:scale-[1.02] transition duration-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i> ĐĂNG KÝ NGAY
+                    </button>
+                    <p class="text-sm font-medium text-center text-emerald-600 hidden" data-caremil-feedback></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script>
         function reveal() { var reveals = document.querySelectorAll(".reveal"); for (var i = 0; i < reveals.length; i++) { var windowHeight = window.innerHeight; var elementTop = reveals[i].getBoundingClientRect().top; var elementVisible = 50; if (elementTop < windowHeight - elementVisible) { reveals[i].classList.add("active"); } } }
         window.addEventListener("scroll", reveal); reveal();
         function switchTab(tabName) { const contents = document.querySelectorAll('.tab-content'); contents.forEach(content => content.classList.remove('active')); const buttons = document.querySelectorAll('.tab-btn'); buttons.forEach(btn => btn.classList.remove('active')); document.getElementById('content-' + tabName).classList.add('active'); document.getElementById('tab-' + tabName).classList.add('active'); }
-        function openExpertModal() { document.getElementById('expert-modal').classList.add('show'); }
-        function closeExpertModal() { document.getElementById('expert-modal').classList.remove('show'); }
+        
+        // Expert Modal Logic
+        function openExpertModal() { document.getElementById('expert-modal').classList.remove('hidden'); setTimeout(() => document.getElementById('expert-modal').classList.add('show'), 10); }
+        function closeExpertModal() { document.getElementById('expert-modal').classList.remove('show'); setTimeout(() => document.getElementById('expert-modal').classList.add('hidden'), 300); }
         function confirmExpert() { closeExpertModal(); document.getElementById('ingredients-lock').classList.add('hidden'); document.getElementById('ingredients-container').classList.remove('hidden'); document.getElementById('ingredients-container').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        
+        // Trial Form Modal Logic
+        function openTrialModal() { document.getElementById('trial-modal').classList.remove('hidden'); setTimeout(() => document.getElementById('trial-modal').classList.add('flex'), 10); }
+        function closeTrialModal() { document.getElementById('trial-modal').classList.remove('flex'); setTimeout(() => document.getElementById('trial-modal').classList.add('hidden'), 10); }
+
         function toggleMobileMenu() { const menu = document.getElementById('mobile-menu'); const icon = document.getElementById('menu-icon'); menu.classList.toggle('open'); if (menu.classList.contains('open')) { icon.classList.remove('fa-bars'); icon.classList.add('fa-times'); } else { icon.classList.remove('fa-times'); icon.classList.add('fa-bars'); } }
     </script>
 </body>
+<?php wp_footer(); ?>
 </html>
