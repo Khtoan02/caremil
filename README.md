@@ -115,3 +115,5 @@ MIT
 
 **Lưu ý:** Theme sử dụng Tailwind CDN, cần kết nối internet để load CSS. Nếu muốn offline, bạn có thể download Tailwind CSS và host local.
 
+
+
