@@ -644,7 +644,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                     </div>
                     <h3 class="text-2xl lg:text-3xl font-display font-black text-brand-navy mb-2">Hộp 800g</h3>
                     <p class="text-gray-500 text-sm lg:text-base mb-6 text-center px-8 max-w-sm">Giải pháp dinh dưỡng kinh tế cho bé sử dụng hàng ngày tại nhà. Bảo quản tốt, dễ dàng pha chế.</p>
-                    <button onclick="document.getElementById('order').scrollIntoView({behavior: 'smooth'})" class="bg-white border-2 border-brand-blue text-brand-blue font-bold py-3 px-8 rounded-full shadow-sm hover:bg-brand-blue hover:text-white transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2"><i class="fas fa-cart-plus"></i> Đặt Mua Hộp</button>
+                    <a href="cua-hang" class="bg-white border-2 border-brand-blue text-brand-blue font-bold py-3 px-8 rounded-full shadow-sm hover:bg-brand-blue hover:text-white transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2"><i class="fas fa-cart-plus"></i> Đặt Mua Hộp</a>
                 </div>
 
                 <!-- Product 2: Sachet 36g -->
@@ -759,9 +759,8 @@ if ( ! defined( 'ABSPATH' ) ) {
                         <p class="text-sm text-brand-navy font-bold mt-1">cskh@npfood.vn</p>
                     </div>
                     <div class="flex justify-center lg:justify-start space-x-3 mt-4">
-                        <a href="#" class="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-blue transition"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-blue transition"><i class="fab fa-youtube"></i></a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-blue transition"><i class="fas fa-globe"></i></a>
+                        <a href="https://www.facebook.com/caremilvietnam/" target="_blank" class="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-blue transition"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://caremil.dawnbridge.vn" target="_blank" class="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-blue transition"><i class="fas fa-globe"></i></a>
                     </div>
                 </div>
 

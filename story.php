@@ -471,7 +471,7 @@ get_header();
             </p>
             
             <div class="reveal delay-300">
-                <a href="caremil_product_list.html" class="inline-flex items-center gap-3 md:gap-4 px-10 md:px-12 py-4 md:py-5 rounded-full bg-brand-navy text-white font-bold text-base md:text-lg shadow-2xl hover:bg-brand-blue transition transform hover:-translate-y-2 hover:shadow-brand-blue/30 tracking-widest uppercase">
+                <a href="https://caremil.dawnbridge.vn/" class="inline-flex items-center gap-3 md:gap-4 px-10 md:px-12 py-4 md:py-5 rounded-full bg-brand-navy text-white font-bold text-base md:text-lg shadow-2xl hover:bg-brand-blue transition transform hover:-translate-y-2 hover:shadow-brand-blue/30 tracking-widest uppercase">
                     Xem Thêm Về Sản Phẩm 
                     <i class="fas fa-arrow-right"></i>
                 </a>
