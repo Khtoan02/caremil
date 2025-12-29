@@ -79,11 +79,11 @@ get_header();
     <!-- HEADER -->
     <nav class="bg-white border-b border-gray-100 h-16 flex items-center sticky top-0 z-50">
         <div class="container mx-auto px-4 flex justify-between items-center max-w-5xl">
-            <a href="caremil_landing_page.html" class="flex items-center gap-2 group">
+            <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="flex items-center gap-2 group">
                 <i class="fas fa-leaf text-brand-gold text-2xl group-hover:rotate-12 transition-transform"></i>
                 <span class="text-xl font-display font-black text-brand-navy tracking-tight">Care<span class="text-brand-blue">MIL</span></span>
             </a>
-            <a href="caremil_product_list.html" class="text-sm font-bold text-brand-blue hover:text-brand-navy transition">
+            <a href="<?php echo esc_url( home_url( '/cua-hang' ) ); ?>" class="text-sm font-bold text-brand-blue hover:text-brand-navy transition">
                 Tiếp tục mua sắm
             </a>
         </div>
@@ -251,7 +251,7 @@ get_header();
                 </div>
 
                 <!-- Back to Home -->
-                <a href="caremil_landing_page.html" class="block w-full bg-brand-navy text-white font-bold py-3.5 rounded-2xl text-center shadow-lg hover:bg-brand-blue transition transform hover:-translate-y-1">
+                <a href="<?php echo esc_url( home_url( '/cua-hang' ) ); ?>" class="block w-full bg-brand-navy text-white font-bold py-3.5 rounded-2xl text-center shadow-lg hover:bg-brand-blue transition transform hover:-translate-y-1">
                     Tiếp Tục Mua Sắm
                 </a>
             </div>

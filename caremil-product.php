@@ -6,10 +6,6 @@
  *
  * @package Caremil
  */
-
-if ( ! defined( 'ABSPATH' ) ) {
-    exit; // Exit if accessed directly
-}
 ?>
 <!DOCTYPE html>
 <html lang="vi" class="scroll-smooth">
@@ -71,6 +67,20 @@ if ( ! defined( 'ABSPATH' ) ) {
         .nutrition-table th { font-family: 'Baloo 2', cursive; color: #1a4f8a; white-space: nowrap; }
         .nutrition-table td { font-family: 'Quicksand', sans-serif; font-weight: 600; }
         .overflow-x-auto { -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+        
+        /* Shared Nav */
+        .nav-link { position: relative; }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 0;
+            background-color: #ffd166;
+            transition: width 0.3s;
+        }
+        .nav-link:hover::after, .nav-link.active::after { width: 100%; }
         
         /* Mobile Menu */
         #mobile-menu { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
@@ -247,49 +257,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     </div>
 
     <!-- 1. NAVIGATION -->
-    <nav class="fixed w-full z-50 transition-all duration-300 py-2 md:py-3 top-1" id="navbar">
-        <div class="container mx-auto px-4">
-            <div class="bg-white/95 backdrop-blur-md rounded-2xl md:rounded-full shadow-soft px-4 py-2 md:px-6 md:py-3 border border-white relative z-50">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center justify-center lg:justify-start gap-4">
-                        <a href="https://caremil.dawnbridge.vn" class="text-2xl font-display font-black text-brand-navy tracking-tight flex items-center gap-2 hover:underline">
-                            <i class="fas fa-leaf text-brand-gold"></i> Care<span class="text-brand-blue">MIL</span>
-                        </a>
-                        <span class="text-2xl font-display font-black text-gray-300">|</span>
-                        <a href="https://dawnbridge.vn" class="text-2xl font-display font-black text-brand-navy tracking-tight flex items-center gap-2 hover:underline" target="_blank" rel="noopener">
-                            <img src="https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Dawnbridge-logo-e1764735620422.png" alt="DawnBridge Logo" class="h-4 w-auto inline-block align-middle" />
-                        </a>
-                    </div>
-                    
-                    <div class="hidden md:flex items-center space-x-8 font-bold text-gray-500 text-lg">
-                        <a href="#khoa-hoc" class="hover:text-brand-blue transition">Khoa Học</a>
-                        <a href="#loi-ich" class="hover:text-brand-blue transition">Lợi Ích</a>
-                        <a href="#bang-thanh-phan" class="hover:text-brand-blue transition">Thành Phần</a>
-                        <a href="#huong-dan" class="hover:text-brand-blue transition">Cách Dùng</a>
-                        <button onclick="openTrialModal()" class="bg-brand-navy text-white font-bold py-2 px-6 rounded-full shadow-lg hover:bg-blue-400 hover:scale-105 transition transform flex items-center gap-2 cursor-pointer">
-                            <i class="fas fa-gift"></i> Nhận Quà
-                        </button>
-                    </div>
-                    
-                    <button onclick="toggleMobileMenu()" class="md:hidden text-brand-navy text-xl bg-blue-50 p-2 rounded-lg w-10 h-10 flex items-center justify-center focus:outline-none shadow-sm transition active:bg-blue-100">
-                        <i class="fas fa-bars" id="menu-icon"></i>
-                    </button>
-                </div>
-
-                <div id="mobile-menu" class="md:hidden mt-2 border-t border-gray-100">
-                    <div class="flex flex-col space-y-2 py-4 font-bold text-gray-600 text-center">
-                        <a href="#loi-ich" onclick="toggleMobileMenu()" class="py-3 hover:text-brand-blue hover:bg-blue-50 rounded-xl transition">Lợi Ích</a>
-                        <a href="#khoa-hoc" onclick="toggleMobileMenu()" class="py-3 hover:text-brand-blue hover:bg-blue-50 rounded-xl transition">Khoa Học</a>
-                        <a href="#bang-thanh-phan" onclick="toggleMobileMenu()" class="py-3 hover:text-brand-blue hover:bg-blue-50 rounded-xl transition">Thành Phần</a>
-                        <a href="#huong-dan" onclick="toggleMobileMenu()" class="py-3 hover:text-brand-blue hover:bg-blue-50 rounded-xl transition">Cách Dùng</a>
-                        <button onclick="toggleMobileMenu(); openTrialModal()" class="bg-brand-gold text-white py-3 mt-2 rounded-xl shadow-md w-full">
-                            Nhận Quà Dùng Thử
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <?php get_template_part( 'template-parts/navbar' ); ?>
 
     <!-- 2. HERO SECTION -->
     <header class="relative pt-32 pb-16 lg:pt-48 lg:pb-32 overflow-hidden">

@@ -283,7 +283,7 @@ if ( empty( $related_products ) && function_exists( 'caremil_get_custom_products
                             </div>
                             
                             <!-- Buy Button -->
-                            <button class="flex-1 bg-brand-navy text-white font-bold text-lg rounded-full h-14 shadow-lg hover:bg-brand-blue transition transform hover:-translate-y-1 flex items-center justify-center gap-3">
+                            <button onclick="addToCart()" class="flex-1 bg-brand-navy text-white font-bold text-lg rounded-full h-14 shadow-lg hover:bg-brand-blue transition transform hover:-translate-y-1 flex items-center justify-center gap-3 add-to-cart-btn">
                                 <i class="fas fa-shopping-bag"></i> 
                                 <span>Mua Ngay</span>
                             </button>
@@ -408,7 +408,7 @@ if ( empty( $related_products ) && function_exists( 'caremil_get_custom_products
             <span class="text-xs text-gray-500">Tổng cộng:</span>
             <span class="text-lg font-bold text-brand-pink" id="sticky-price"><?php echo esc_html( $active_variant['price'] ); ?></span>
         </div>
-        <button class="bg-brand-navy text-white font-bold py-2 px-8 rounded-full shadow-md hover:bg-blue-900 transition" onclick="document.querySelector('button.bg-brand-navy').click()">
+        <button class="bg-brand-navy text-white font-bold py-2 px-8 rounded-full shadow-md hover:bg-blue-900 transition" onclick="addToCart()">
             Mua Ngay
         </button>
     </div>
@@ -479,6 +479,75 @@ if ( empty( $related_products ) && function_exists( 'caremil_get_custom_products
             document.getElementById('content-' + tabName).classList.add('active');
             const btn = document.getElementById('tab-' + tabName);
             btn.classList.add('active', 'text-brand-navy');
+        }
+
+        // Add to Cart Function
+        function addToCart() {
+            const qty = parseInt(document.getElementById('qty').value) || 1;
+            const variantData = products[currentVariant];
+            const productId = <?php echo $is_caremil_post ? get_the_ID() : 0; ?>;
+            
+            if (productId <= 0) {
+                alert('Sản phẩm không hợp lệ');
+                return;
+            }
+            
+            const btn = document.querySelector('.add-to-cart-btn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang thêm...';
+            
+            // Prepare data
+            const formData = new FormData();
+            formData.append('action', 'caremil_add_to_cart');
+            formData.append('nonce', '<?php echo esc_js( wp_create_nonce( "caremil_cart_nonce" ) ); ?>');
+            formData.append('product_id', productId);
+            formData.append('quantity', qty);
+            formData.append('variant', currentVariant);
+            formData.append('variant_label', variantData.label);
+            formData.append('price', variantData.price);
+            formData.append('old_price', variantData.oldPrice || '');
+            formData.append('image', variantData.image);
+            
+            fetch('<?php echo esc_js( admin_url( "admin-ajax.php" ) ); ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    btn.innerHTML = '<i class="fas fa-check"></i> Đã thêm!';
+                    btn.style.background = '#4ade80';
+                    
+                    // Update header cart count
+                    const headerCount = document.getElementById('header-cart-count');
+                    if (headerCount) {
+                        headerCount.textContent = data.data.cart_count || '0';
+                        headerCount.style.display = 'flex';
+                    }
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.background = '';
+                        btn.disabled = false;
+                    }, 2000);
+                    
+                    // Optional: Redirect to cart or show notification
+                    // window.location.href = '<?php echo esc_js( home_url( "/gio-hang" ) ); ?>';
+                } else {
+                    alert(data.data?.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi thêm vào giỏ hàng');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
         }
 
         // Initialize with default variant from PHP

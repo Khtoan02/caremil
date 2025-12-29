@@ -9,6 +9,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
 
+// Fallback API Key đặt trong theme (ít an toàn hơn ENV/wp-config, dùng theo yêu cầu).
+if ( ! defined( 'CAREMIL_SEPAY_DEFAULT_KEY' ) ) {
+    define( 'CAREMIL_SEPAY_DEFAULT_KEY', 'SNTUPDJ9NMDWKOUOIE8YRFGI3CCO7GFJVLN6GDZ20QTPG4T5M1JHBX0MUPB84UHF' );
+}
+
 /**
  * Theme Setup
  */
@@ -1825,3 +1830,1482 @@ add_action( 'init', 'caremil_register_product_meta' );
  * (Custom add/edit UI removed; using WordPress default editor)
  */
 
+/**
+ * ============================================
+ * HỆ THỐNG GIỎ HÀNG CUSTOM
+ * ============================================
+ */
+
+/**
+ * Khởi tạo session cho giỏ hàng
+ */
+function caremil_init_cart_session() {
+    if ( ! session_id() ) {
+        session_start();
+    }
+    
+    if ( ! isset( $_SESSION['caremil_cart'] ) ) {
+        $_SESSION['caremil_cart'] = array();
+    }
+}
+add_action( 'init', 'caremil_init_cart_session', 1 );
+
+/**
+ * Lấy giỏ hàng hiện tại
+ */
+function caremil_get_cart() {
+    caremil_init_cart_session();
+    return isset( $_SESSION['caremil_cart'] ) ? $_SESSION['caremil_cart'] : array();
+}
+
+/**
+ * Lấy tổng số lượng sản phẩm trong giỏ hàng
+ */
+function caremil_get_cart_count() {
+    $cart = caremil_get_cart();
+    $count = 0;
+    foreach ( $cart as $item ) {
+        $count += isset( $item['quantity'] ) ? intval( $item['quantity'] ) : 0;
+    }
+    return $count;
+}
+
+/**
+ * Lấy tổng tiền giỏ hàng
+ */
+function caremil_get_cart_total() {
+    $cart = caremil_get_cart();
+    $total = 0;
+    foreach ( $cart as $item ) {
+        $price = isset( $item['price'] ) ? floatval( str_replace( array( '.', ',' ), '', $item['price'] ) ) : 0;
+        $qty = isset( $item['quantity'] ) ? intval( $item['quantity'] ) : 0;
+        $total += $price * $qty;
+    }
+    return $total;
+}
+
+/**
+ * Thêm sản phẩm vào giỏ hàng
+ */
+function caremil_add_to_cart( $product_id, $quantity = 1, $variant = 'main', $variant_label = '', $price = '', $old_price = '', $image = '' ) {
+    caremil_init_cart_session();
+    
+    $cart_key = $product_id . '_' . $variant;
+    
+    if ( isset( $_SESSION['caremil_cart'][ $cart_key ] ) ) {
+        // Nếu đã có, tăng số lượng
+        $_SESSION['caremil_cart'][ $cart_key ]['quantity'] += intval( $quantity );
+    } else {
+        // Thêm mới
+        $_SESSION['caremil_cart'][ $cart_key ] = array(
+            'product_id'   => intval( $product_id ),
+            'quantity'     => intval( $quantity ),
+            'variant'      => sanitize_text_field( $variant ),
+            'variant_label' => sanitize_text_field( $variant_label ),
+            'price'        => sanitize_text_field( $price ),
+            'old_price'    => sanitize_text_field( $old_price ),
+            'image'        => esc_url_raw( $image ),
+        );
+    }
+    
+    return true;
+}
+
+/**
+ * Cập nhật số lượng sản phẩm trong giỏ hàng
+ */
+function caremil_update_cart_item( $cart_key, $quantity ) {
+    caremil_init_cart_session();
+    
+    if ( isset( $_SESSION['caremil_cart'][ $cart_key ] ) ) {
+        if ( intval( $quantity ) <= 0 ) {
+            unset( $_SESSION['caremil_cart'][ $cart_key ] );
+        } else {
+            $_SESSION['caremil_cart'][ $cart_key ]['quantity'] = intval( $quantity );
+        }
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * Xóa sản phẩm khỏi giỏ hàng
+ */
+function caremil_remove_from_cart( $cart_key ) {
+    caremil_init_cart_session();
+    
+    if ( isset( $_SESSION['caremil_cart'][ $cart_key ] ) ) {
+        unset( $_SESSION['caremil_cart'][ $cart_key ] );
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * Xóa toàn bộ giỏ hàng
+ */
+function caremil_empty_cart() {
+    caremil_init_cart_session();
+    $_SESSION['caremil_cart'] = array();
+    return true;
+}
+
+/**
+ * AJAX: Thêm vào giỏ hàng
+ */
+function caremil_ajax_add_to_cart() {
+    check_ajax_referer( 'caremil_cart_nonce', 'nonce' );
+    
+    $product_id = isset( $_POST['product_id'] ) ? intval( $_POST['product_id'] ) : 0;
+    $quantity = isset( $_POST['quantity'] ) ? intval( $_POST['quantity'] ) : 1;
+    $variant = isset( $_POST['variant'] ) ? sanitize_text_field( $_POST['variant'] ) : 'main';
+    $variant_label = isset( $_POST['variant_label'] ) ? sanitize_text_field( $_POST['variant_label'] ) : '';
+    $price = isset( $_POST['price'] ) ? sanitize_text_field( $_POST['price'] ) : '';
+    $old_price = isset( $_POST['old_price'] ) ? sanitize_text_field( $_POST['old_price'] ) : '';
+    $image = isset( $_POST['image'] ) ? esc_url_raw( $_POST['image'] ) : '';
+    
+    if ( $product_id <= 0 ) {
+        wp_send_json_error( array( 'message' => 'Sản phẩm không hợp lệ' ) );
+    }
+    
+    // Nếu không có thông tin sản phẩm từ POST, lấy từ database
+    if ( empty( $price ) || empty( $image ) ) {
+        $post = get_post( $product_id );
+        if ( ! $post || 'caremil_product' !== $post->post_type ) {
+            wp_send_json_error( array( 'message' => 'Sản phẩm không tồn tại' ) );
+        }
+        
+        if ( empty( $price ) ) {
+            $price = get_post_meta( $product_id, 'caremil_price', true );
+        }
+        if ( empty( $old_price ) ) {
+            $old_price = get_post_meta( $product_id, 'caremil_old_price', true );
+        }
+        if ( empty( $image ) ) {
+            $image = get_the_post_thumbnail_url( $product_id, 'medium' );
+        }
+        if ( empty( $variant_label ) ) {
+            $variant_label = get_the_title( $product_id );
+        }
+    }
+    
+    caremil_add_to_cart( $product_id, $quantity, $variant, $variant_label, $price, $old_price, $image );
+    
+    wp_send_json_success( array(
+        'message'    => 'Đã thêm vào giỏ hàng',
+        'cart_count' => caremil_get_cart_count(),
+        'cart_total' => caremil_format_price( caremil_get_cart_total() ),
+    ) );
+}
+add_action( 'wp_ajax_caremil_add_to_cart', 'caremil_ajax_add_to_cart' );
+add_action( 'wp_ajax_nopriv_caremil_add_to_cart', 'caremil_ajax_add_to_cart' );
+
+/**
+ * AJAX: Cập nhật số lượng
+ */
+function caremil_ajax_update_cart() {
+    check_ajax_referer( 'caremil_cart_nonce', 'nonce' );
+    
+    $cart_key = isset( $_POST['cart_key'] ) ? sanitize_text_field( $_POST['cart_key'] ) : '';
+    $quantity = isset( $_POST['quantity'] ) ? intval( $_POST['quantity'] ) : 0;
+    
+    if ( empty( $cart_key ) ) {
+        wp_send_json_error( array( 'message' => 'Không hợp lệ' ) );
+    }
+    
+    caremil_update_cart_item( $cart_key, $quantity );
+    
+    wp_send_json_success( array(
+        'cart_count' => caremil_get_cart_count(),
+        'cart_total' => caremil_format_price( caremil_get_cart_total() ),
+    ) );
+}
+add_action( 'wp_ajax_caremil_update_cart', 'caremil_ajax_update_cart' );
+add_action( 'wp_ajax_nopriv_caremil_update_cart', 'caremil_ajax_update_cart' );
+
+/**
+ * AJAX: Xóa khỏi giỏ hàng
+ */
+function caremil_ajax_remove_from_cart() {
+    check_ajax_referer( 'caremil_cart_nonce', 'nonce' );
+    
+    $cart_key = isset( $_POST['cart_key'] ) ? sanitize_text_field( $_POST['cart_key'] ) : '';
+    
+    if ( empty( $cart_key ) ) {
+        wp_send_json_error( array( 'message' => 'Không hợp lệ' ) );
+    }
+    
+    caremil_remove_from_cart( $cart_key );
+    
+    wp_send_json_success( array(
+        'message'    => 'Đã xóa khỏi giỏ hàng',
+        'cart_count' => caremil_get_cart_count(),
+        'cart_total' => caremil_format_price( caremil_get_cart_total() ),
+    ) );
+}
+add_action( 'wp_ajax_caremil_remove_from_cart', 'caremil_ajax_remove_from_cart' );
+add_action( 'wp_ajax_nopriv_caremil_remove_from_cart', 'caremil_ajax_remove_from_cart' );
+
+/**
+ * AJAX: Xóa toàn bộ giỏ hàng
+ */
+function caremil_ajax_empty_cart() {
+    check_ajax_referer( 'caremil_cart_nonce', 'nonce' );
+    
+    caremil_empty_cart();
+    
+    wp_send_json_success( array(
+        'message'    => 'Đã xóa toàn bộ giỏ hàng',
+        'cart_count' => 0,
+        'cart_total' => caremil_format_price( 0 ),
+    ) );
+}
+add_action( 'wp_ajax_caremil_empty_cart', 'caremil_ajax_empty_cart' );
+add_action( 'wp_ajax_nopriv_caremil_empty_cart', 'caremil_ajax_empty_cart' );
+
+/**
+ * AJAX: Lấy số lượng giỏ hàng
+ */
+function caremil_ajax_get_cart_count() {
+    wp_send_json_success( array(
+        'cart_count' => caremil_get_cart_count(),
+        'cart_total' => caremil_format_price( caremil_get_cart_total() ),
+    ) );
+}
+add_action( 'wp_ajax_caremil_get_cart_count', 'caremil_ajax_get_cart_count' );
+add_action( 'wp_ajax_nopriv_caremil_get_cart_count', 'caremil_ajax_get_cart_count' );
+
+/**
+ * Format giá tiền
+ */
+function caremil_format_price( $amount ) {
+    return number_format( $amount, 0, ',', '.' ) . 'đ';
+}
+
+/**
+ * Lấy URL của page theo template name
+ */
+function caremil_get_page_url_by_template( $template_name ) {
+    $pages = get_pages( array(
+        'meta_key'   => '_wp_page_template',
+        'meta_value' => $template_name . '.php'
+    ) );
+    
+    if ( ! empty( $pages ) ) {
+        return get_permalink( $pages[0]->ID );
+    }
+    
+    // Fallback: thử tìm theo slug
+    $slug_map = array(
+        'Payment' => 'thanh-toan',
+        'Order Status' => 'trang-thai-don-hang',
+        'Checkout' => 'thanh-toan',
+        'Carts' => 'gio-hang',
+    );
+    
+    if ( isset( $slug_map[ $template_name ] ) ) {
+        return home_url( '/' . $slug_map[ $template_name ] . '/' );
+    }
+    
+    return home_url( '/' );
+}
+
+/**
+ * Localize script cho cart AJAX
+ */
+function caremil_localize_cart_script() {
+    wp_localize_script(
+        'caremil-script',
+        'caremilCart',
+        array(
+            'ajax_url' => admin_url( 'admin-ajax.php' ),
+            'nonce'    => wp_create_nonce( 'caremil_cart_nonce' ),
+            'cart_count' => caremil_get_cart_count(),
+            'cart_total' => caremil_format_price( caremil_get_cart_total() ),
+        )
+    );
+}
+add_action( 'wp_enqueue_scripts', 'caremil_localize_cart_script' );
+
+/**
+ * ====== PANCAKE HELPERS (chia sẻ cho checkout & account) ======
+ */
+
+/**
+ * Lấy Pancake API Key từ options (ưu tiên) hoặc constants (fallback)
+ */
+if ( ! function_exists( 'caremil_get_pancake_api_key' ) ) {
+    function caremil_get_pancake_api_key() {
+        $api_key = get_option( 'caremil_pancake_api_key', '' );
+        if ( ! empty( $api_key ) ) {
+            return $api_key;
+        }
+        // Fallback về constant nếu chưa cấu hình trong admin
+        if ( defined( 'CAREMIL_PANCAKE_API_KEY' ) ) {
+            return CAREMIL_PANCAKE_API_KEY;
+        }
+        return '';
+    }
+}
+
+/**
+ * Lấy Pancake Shop ID từ options (ưu tiên) hoặc constants (fallback)
+ */
+if ( ! function_exists( 'caremil_get_pancake_shop_id' ) ) {
+    function caremil_get_pancake_shop_id() {
+        $shop_id = get_option( 'caremil_pancake_shop_id', '' );
+        if ( ! empty( $shop_id ) ) {
+            return $shop_id;
+        }
+        // Fallback về constant nếu chưa cấu hình trong admin
+        if ( defined( 'CAREMIL_PANCAKE_SHOP_ID' ) ) {
+            return CAREMIL_PANCAKE_SHOP_ID;
+        }
+        return '';
+    }
+}
+
+/**
+ * Lấy Pancake Base URL từ options (ưu tiên) hoặc constants (fallback)
+ */
+if ( ! function_exists( 'caremil_get_pancake_base_url' ) ) {
+    function caremil_get_pancake_base_url() {
+        $base_url = get_option( 'caremil_pancake_base_url', '' );
+        if ( ! empty( $base_url ) ) {
+            return $base_url;
+        }
+        // Fallback về constant nếu chưa cấu hình trong admin
+        if ( defined( 'CAREMIL_PANCAKE_BASE_URL' ) ) {
+            return CAREMIL_PANCAKE_BASE_URL;
+        }
+        return 'https://pos.pages.fm/api/v1';
+    }
+}
+
+// Định nghĩa constants để tương thích với code cũ (chỉ dùng làm fallback)
+if ( ! defined( 'CAREMIL_PANCAKE_API_KEY' ) ) {
+    define( 'CAREMIL_PANCAKE_API_KEY', '5a5e73eca1c14dacb904e75cfb8e98a2' );
+}
+
+if ( ! defined( 'CAREMIL_PANCAKE_SHOP_ID' ) ) {
+    define( 'CAREMIL_PANCAKE_SHOP_ID', '1942324124' );
+}
+
+if ( ! defined( 'CAREMIL_PANCAKE_BASE_URL' ) ) {
+    define( 'CAREMIL_PANCAKE_BASE_URL', 'https://pos.pages.fm/api/v1' );
+}
+
+/**
+ * Kiểm tra kết nối Pancake API với cache (tránh check quá nhiều)
+ * Cache trong 5 phút
+ */
+if ( ! function_exists( 'caremil_check_pancake_connection' ) ) {
+    function caremil_check_pancake_connection( $force_check = false ) {
+        // Kiểm tra cache trước
+        $cache_key = 'caremil_pancake_connection_status';
+        $cache_time = 5 * MINUTE_IN_SECONDS; // Cache 5 phút
+        
+        if ( ! $force_check ) {
+            $cached = get_transient( $cache_key );
+            if ( $cached !== false ) {
+                return $cached === 'connected';
+            }
+        }
+        
+        // Kiểm tra config có đầy đủ không
+        $api_key = caremil_get_pancake_api_key();
+        $shop_id = caremil_get_pancake_shop_id();
+        $base_url = caremil_get_pancake_base_url();
+        
+        // Lưu thông tin debug
+        $debug_info = array(
+            'timestamp' => current_time( 'mysql' ),
+            'api_key_set' => ! empty( $api_key ),
+            'shop_id_set' => ! empty( $shop_id ),
+            'base_url_set' => ! empty( $base_url ),
+            'base_url' => $base_url,
+            'shop_id' => $shop_id,
+        );
+        
+        if ( empty( $api_key ) || empty( $shop_id ) || empty( $base_url ) ) {
+            $debug_info['error'] = 'Missing configuration';
+            $debug_info['missing'] = array();
+            if ( empty( $api_key ) ) $debug_info['missing'][] = 'API Key';
+            if ( empty( $shop_id ) ) $debug_info['missing'][] = 'Shop ID';
+            if ( empty( $base_url ) ) $debug_info['missing'][] = 'Base URL';
+            update_option( 'caremil_pancake_debug_info', $debug_info );
+            set_transient( $cache_key, 'disconnected', $cache_time );
+            return false;
+        }
+        
+        // Thử gọi API đơn giản để test connection
+        $test_path = '/shops/' . $shop_id . '/customers';
+        $test_query = array( 'page_size' => 1 );
+        
+        $api_key_val = $api_key;
+        $test_query['api_key'] = $api_key_val;
+        
+        $test_url = rtrim( $base_url, '/' ) . '/' . ltrim( $test_path, '/' );
+        $test_url = add_query_arg( $test_query, $test_url );
+        
+        $debug_info['test_url'] = str_replace( $api_key_val, '***HIDDEN***', $test_url );
+        
+        $args = array(
+            'timeout' => 10, // Timeout ngắn hơn cho test
+            'method'  => 'GET',
+            'headers' => array(
+                'Accept' => 'application/json',
+            ),
+        );
+        
+        $response = wp_remote_request( $test_url, $args );
+        
+        if ( is_wp_error( $response ) ) {
+            $debug_info['error'] = 'WP_Error: ' . $response->get_error_message();
+            $debug_info['error_code'] = $response->get_error_code();
+            update_option( 'caremil_pancake_debug_info', $debug_info );
+            set_transient( $cache_key, 'disconnected', $cache_time );
+            return false;
+        }
+        
+        $status = wp_remote_retrieve_response_code( $response );
+        $body = wp_remote_retrieve_body( $response );
+        
+        $debug_info['http_status'] = $status;
+        $debug_info['response_body'] = substr( $body, 0, 500 ); // Lưu 500 ký tự đầu
+        
+        // Nếu status code là 200-299 hoặc 400-499 (có thể là lỗi validation nhưng API đang hoạt động)
+        if ( $status >= 200 && $status < 500 ) {
+            $debug_info['status'] = 'connected';
+            update_option( 'caremil_pancake_debug_info', $debug_info );
+            set_transient( $cache_key, 'connected', $cache_time );
+            return true;
+        }
+        
+        $debug_info['error'] = 'Invalid HTTP status: ' . $status;
+        $debug_info['status'] = 'disconnected';
+        update_option( 'caremil_pancake_debug_info', $debug_info );
+        set_transient( $cache_key, 'disconnected', $cache_time );
+        return false;
+    }
+}
+
+/**
+ * Hiển thị thông báo hệ thống đang bảo trì khi không kết nối được Pancake
+ */
+if ( ! function_exists( 'caremil_display_maintenance_message' ) ) {
+    function caremil_display_maintenance_message() {
+        ?>
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Hệ thống đang bảo trì - <?php bloginfo('name'); ?></title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+            <style>
+                body {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="max-w-md w-full mx-4">
+                <div class="bg-white rounded-2xl shadow-2xl p-8 text-center">
+                    <div class="mb-6">
+                        <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-tools text-yellow-600 text-3xl"></i>
+                        </div>
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2">Hệ thống đang bảo trì</h1>
+                        <p class="text-gray-600 text-lg">Chúng tôi đang nâng cấp hệ thống để phục vụ bạn tốt hơn</p>
+                    </div>
+                    
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-left rounded">
+                        <p class="text-blue-800 text-sm leading-relaxed">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Vui lòng thử lại sau ít phút</strong> hoặc liên hệ Admin để được hỗ trợ sớm nhất.
+                        </p>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <a href="<?php echo esc_url( home_url() ); ?>" 
+                           class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+                            <i class="fas fa-home mr-2"></i> Về trang chủ
+                        </a>
+                        
+                        <a href="mailto:<?php echo esc_attr( get_option('admin_email') ); ?>?subject=Hỗ trợ hệ thống" 
+                           class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition duration-200">
+                            <i class="fas fa-envelope mr-2"></i> Liên hệ Admin
+                        </a>
+                    </div>
+                    
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-clock mr-1"></i>
+                            Thời gian dự kiến: 5-10 phút
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-6">
+                    <p class="text-white text-sm opacity-90">
+                        <?php bloginfo('name'); ?> &copy; <?php echo date('Y'); ?>
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        exit;
+    }
+}
+
+/**
+ * Kiểm tra và chặn nếu không kết nối được Pancake
+ */
+if ( ! function_exists( 'caremil_require_pancake_connection' ) ) {
+    function caremil_require_pancake_connection( $force_check = false ) {
+        if ( ! caremil_check_pancake_connection( $force_check ) ) {
+            caremil_display_maintenance_message();
+        }
+    }
+}
+
+if ( ! function_exists( 'caremil_pancake_request' ) ) {
+    /**
+     * Gọi API Pancake (v1) kèm api_key dạng query param.
+     */
+    function caremil_pancake_request( $path, $query = array(), $method = 'GET', $body = null ) {
+        $api_key = caremil_get_pancake_api_key();
+        if ( empty( $api_key ) ) {
+            return null;
+        }
+
+        $query = array_merge(
+            array( 'api_key' => $api_key ),
+            $query
+        );
+
+        $base_url = caremil_get_pancake_base_url();
+        $url = rtrim( $base_url, '/' ) . '/' . ltrim( $path, '/' );
+        $url = add_query_arg( $query, $url );
+
+        $args = array(
+            'timeout' => 20,
+            'method'  => $method,
+            'headers' => array(
+                'Accept' => 'application/json',
+            ),
+        );
+
+        if ( 'GET' !== $method && ! is_null( $body ) ) {
+            $args['headers']['Content-Type'] = 'application/json';
+            $args['body']                    = wp_json_encode( $body );
+        }
+
+        $response = wp_remote_request( $url, $args );
+        if ( is_wp_error( $response ) ) {
+            return null;
+        }
+
+        $status = wp_remote_retrieve_response_code( $response );
+        if ( $status < 200 || $status >= 300 ) {
+            return null;
+        }
+
+        $payload = wp_remote_retrieve_body( $response );
+        $data    = json_decode( $payload, true );
+
+        return $data ? $data : null;
+    }
+}
+
+if ( ! function_exists( 'caremil_normalize_phone' ) ) {
+    /**
+     * Chuẩn hóa SĐT về 0xxxxxxxx.
+     */
+    function caremil_normalize_phone( $phone ) {
+        $clean = preg_replace( '/[^0-9+]/', '', $phone ?? '' );
+        if ( strpos( $clean, '+84' ) === 0 ) {
+            return '0' . substr( $clean, 3 );
+        }
+        if ( strpos( $clean, '84' ) === 0 ) {
+            return '0' . substr( $clean, 2 );
+        }
+        return $clean;
+    }
+}
+
+/**
+ * Rút danh sách địa chỉ từ cấu trúc trả về của Pancake.
+ */
+function caremil_get_pancake_addresses_from_customer( $customer ) {
+    if ( ! is_array( $customer ) ) {
+        return array();
+    }
+
+    if ( ! empty( $customer['shop_customer_addresses'] ) && is_array( $customer['shop_customer_addresses'] ) ) {
+        return $customer['shop_customer_addresses'];
+    }
+
+    if ( ! empty( $customer['shop_customer_address'] ) && is_array( $customer['shop_customer_address'] ) ) {
+        return $customer['shop_customer_address'];
+    }
+
+    return array();
+}
+
+/**
+ * AJAX: Lưu địa chỉ mới cho khách Pancake (dùng cho checkout).
+ */
+function caremil_ajax_save_address() {
+    // Kiểm tra kết nối Pancake trước
+    if ( function_exists( 'caremil_check_pancake_connection' ) ) {
+        if ( ! caremil_check_pancake_connection() ) {
+            wp_send_json_error( array(
+                'message' => 'Hệ thống đang bảo trì. Vui lòng thử lại sau ít phút hoặc liên hệ Admin để được hỗ trợ sớm nhất.',
+                'maintenance' => true
+            ), 503 );
+        }
+    }
+    
+    if ( ! session_id() ) {
+        session_start();
+    }
+
+    $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+    if ( ! wp_verify_nonce( $nonce, 'caremil_addr_nonce' ) ) {
+        wp_send_json_error(
+            array( 'message' => 'Phiên không hợp lệ.' ),
+            403
+        );
+    }
+
+    if ( empty( $_SESSION['pancake_logged_in'] ) || empty( $_SESSION['pancake_customer_id'] ) ) {
+        wp_send_json_error( array( 'message' => 'Bạn cần đăng nhập để lưu địa chỉ.' ), 401 );
+    }
+
+    $customer_id = sanitize_text_field( $_SESSION['pancake_customer_id'] );
+    $full_name   = isset( $_POST['full_name'] ) ? sanitize_text_field( wp_unslash( $_POST['full_name'] ) ) : '';
+    $phone       = isset( $_POST['phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['phone_number'] ) ) : '';
+    $full_addr   = isset( $_POST['full_address'] ) ? sanitize_text_field( wp_unslash( $_POST['full_address'] ) ) : '';
+    $province_id = isset( $_POST['province_id'] ) ? sanitize_text_field( wp_unslash( $_POST['province_id'] ) ) : '';
+    $district_id = isset( $_POST['district_id'] ) ? sanitize_text_field( wp_unslash( $_POST['district_id'] ) ) : '';
+    $commune_id  = isset( $_POST['commune_id'] ) ? sanitize_text_field( wp_unslash( $_POST['commune_id'] ) ) : '';
+
+    if ( empty( $full_addr ) ) {
+        wp_send_json_error( array( 'message' => 'Vui lòng nhập địa chỉ đầy đủ.' ) );
+    }
+
+    $customer = caremil_pancake_request(
+        "/shops/" . caremil_get_pancake_shop_id() . "/customers/{$customer_id}"
+    );
+
+    $addr_list = caremil_get_pancake_addresses_from_customer( $customer );
+    $normalize = function ( $value ) {
+        $value = strtolower( trim( $value ?? '' ) );
+        $value = preg_replace( '/\s+/', ' ', $value );
+        return $value;
+    };
+
+    $new_addr_normalized = $normalize( $full_addr );
+
+    foreach ( $addr_list as $item ) {
+        $existing = $normalize( $item['full_address'] ?? $item['address'] ?? '' );
+        if ( $existing && $existing === $new_addr_normalized ) {
+            wp_send_json_success( array( 'addresses' => $addr_list, 'duplicated' => true ) );
+        }
+    }
+
+    $addr_payload_item = array(
+        'full_name'    => $full_name,
+        'phone_number' => $phone,
+        'full_address' => $full_addr,
+        'address'      => $full_addr,
+        'province_id'  => $province_id,
+        'district_id'  => $district_id,
+        'commune_id'   => $commune_id,
+        'country_code' => '84',
+    );
+
+    $addr_list[] = $addr_payload_item;
+
+    caremil_pancake_request(
+        "/shops/" . caremil_get_pancake_shop_id() . "/customers/{$customer_id}",
+        array(),
+        'PUT',
+        array(
+            'customer' => array(
+                'shop_customer_address'   => $addr_list,
+                'shop_customer_addresses' => $addr_list,
+            ),
+        )
+    );
+
+    $updated_customer = caremil_pancake_request(
+        "/shops/" . caremil_get_pancake_shop_id() . "/customers/{$customer_id}"
+    );
+    $updated_addresses = caremil_get_pancake_addresses_from_customer( $updated_customer );
+
+    wp_send_json_success(
+        array(
+            'addresses' => $updated_addresses,
+            'duplicated' => false,
+        )
+    );
+}
+add_action( 'wp_ajax_caremil_save_address', 'caremil_ajax_save_address' );
+add_action( 'wp_ajax_nopriv_caremil_save_address', 'caremil_ajax_save_address' );
+
+// 1. Tự động tạo bảng khi kích hoạt theme hoặc truy cập admin
+function create_pancake_customers_table() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'pancake_customers';
+    $charset_collate = $wpdb->get_charset_collate();
+
+    // SQL tạo bảng: Lưu SĐT, Mật khẩu (đã mã hóa), Tên, Email, Pancake ID
+    $sql = "CREATE TABLE $table_name (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        phone varchar(20) NOT NULL,
+        password varchar(255) NOT NULL,
+        name varchar(100) DEFAULT '' NOT NULL,
+        email varchar(100) DEFAULT '' NOT NULL,
+        pancake_id varchar(50) DEFAULT '' NOT NULL,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id),
+        UNIQUE KEY phone (phone)
+    ) $charset_collate;";
+
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql); // Hàm này của WP sẽ tự tạo bảng nếu chưa có, hoặc cập nhật nếu thiếu cột
+}
+// Chạy hàm này khi admin được khởi tạo (đảm bảo bảng luôn tồn tại)
+add_action('admin_init', 'create_pancake_customers_table');
+
+// 2. Thêm Menu quản lý vào Admin Dashboard
+function register_pancake_menu_page() {
+    add_menu_page(
+        'Khách hàng Pancake', // Page Title
+        'Khách hàng Pancake', // Menu Title
+        'manage_options',     // Capability (Chỉ admin)
+        'pancake-customers',  // Menu Slug
+        'render_pancake_customers_page', // Callback function
+        'dashicons-groups',   // Icon
+        6                     // Position
+    );
+    
+    // Thêm submenu Cài đặt Pancake
+    add_submenu_page(
+        'pancake-customers',
+        'Cài đặt Pancake',
+        'Cài đặt Pancake',
+        'manage_options',
+        'pancake-settings',
+        'render_pancake_settings_page'
+    );
+}
+add_action('admin_menu', 'register_pancake_menu_page');
+
+// 3. Đăng ký Settings cho Pancake
+function caremil_register_pancake_settings() {
+    register_setting(
+        'caremil_pancake_settings_group',
+        'caremil_pancake_api_key',
+        array(
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => ''
+        )
+    );
+    
+    register_setting(
+        'caremil_pancake_settings_group',
+        'caremil_pancake_shop_id',
+        array(
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => ''
+        )
+    );
+    
+    register_setting(
+        'caremil_pancake_settings_group',
+        'caremil_pancake_base_url',
+        array(
+            'type' => 'string',
+            'sanitize_callback' => 'esc_url_raw',
+            'default' => 'https://pos.pages.fm/api/v1'
+        )
+    );
+}
+add_action('admin_init', 'caremil_register_pancake_settings');
+
+// 4. Render trang Settings
+function render_pancake_settings_page() {
+    // Kiểm tra quyền
+    if (!current_user_can('manage_options')) {
+        wp_die(__('Bạn không có quyền truy cập trang này.'));
+    }
+    
+    // Xử lý test connection (AJAX)
+    if (isset($_POST['test_connection']) && check_admin_referer('caremil_pancake_settings_nonce')) {
+        // Lưu tạm để test
+        $temp_api_key = sanitize_text_field($_POST['caremil_pancake_api_key']);
+        $temp_shop_id = sanitize_text_field($_POST['caremil_pancake_shop_id']);
+        $temp_base_url = esc_url_raw($_POST['caremil_pancake_base_url']);
+        
+        // Test với giá trị tạm
+        $old_api_key = get_option('caremil_pancake_api_key', '');
+        $old_shop_id = get_option('caremil_pancake_shop_id', '');
+        $old_base_url = get_option('caremil_pancake_base_url', '');
+        
+        update_option('caremil_pancake_api_key', $temp_api_key);
+        update_option('caremil_pancake_shop_id', $temp_shop_id);
+        update_option('caremil_pancake_base_url', $temp_base_url);
+        
+        // Test connection
+        $is_connected = false;
+        if (function_exists('caremil_check_pancake_connection')) {
+            $is_connected = caremil_check_pancake_connection(true); // Force check
+        }
+        
+        // Khôi phục giá trị cũ nếu test thất bại
+        if (!$is_connected) {
+            update_option('caremil_pancake_api_key', $old_api_key);
+            update_option('caremil_pancake_shop_id', $old_shop_id);
+            update_option('caremil_pancake_base_url', $old_base_url);
+        }
+        
+        if ($is_connected) {
+            echo '<div class="notice notice-success is-dismissible"><p><strong>✓ Kết nối thành công!</strong> Cài đặt đã được lưu và kết nối với Pancake POS hoạt động bình thường.</p></div>';
+        } else {
+            $debug_info = get_option('caremil_pancake_debug_info', array());
+            $error_msg = 'Vui lòng kiểm tra lại API Key, Shop ID và Base URL.';
+            if (!empty($debug_info['error'])) {
+                $error_msg .= '<br><strong>Chi tiết lỗi:</strong> ' . esc_html($debug_info['error']);
+            }
+            if (!empty($debug_info['missing'])) {
+                $error_msg .= '<br><strong>Thiếu:</strong> ' . esc_html(implode(', ', $debug_info['missing']));
+            }
+            echo '<div class="notice notice-error is-dismissible"><p><strong>✗ Kết nối thất bại!</strong><br>' . $error_msg . '<br>Cài đặt chưa được lưu. Xem thông tin debug bên dưới để biết thêm chi tiết.</p></div>';
+        }
+    }
+    
+    // Xử lý lưu settings
+    if (isset($_POST['submit']) && check_admin_referer('caremil_pancake_settings_nonce')) {
+        update_option('caremil_pancake_api_key', sanitize_text_field($_POST['caremil_pancake_api_key']));
+        update_option('caremil_pancake_shop_id', sanitize_text_field($_POST['caremil_pancake_shop_id']));
+        update_option('caremil_pancake_base_url', esc_url_raw($_POST['caremil_pancake_base_url']));
+        
+        // Clear cache connection status sau khi lưu
+        delete_transient('caremil_pancake_connection_status');
+        
+        echo '<div class="notice notice-success is-dismissible"><p>Cài đặt đã được lưu thành công!</p></div>';
+    }
+    
+    // Lấy giá trị hiện tại
+    $api_key = get_option('caremil_pancake_api_key', '');
+    $shop_id = get_option('caremil_pancake_shop_id', '');
+    $base_url = get_option('caremil_pancake_base_url', 'https://pos.pages.fm/api/v1');
+    
+    ?>
+    <div class="wrap">
+        <h1>Cài đặt Pancake POS</h1>
+        <p class="description">Cấu hình kết nối với hệ thống Pancake POS. Thông tin này được lưu trữ an toàn trong database.</p>
+        
+        <form method="post" action="">
+            <?php wp_nonce_field('caremil_pancake_settings_nonce'); ?>
+            
+            <table class="form-table" role="presentation">
+                <tbody>
+                    <tr>
+                        <th scope="row">
+                            <label for="caremil_pancake_api_key">API Key</label>
+                        </th>
+                        <td>
+                            <input 
+                                type="text" 
+                                id="caremil_pancake_api_key" 
+                                name="caremil_pancake_api_key" 
+                                value="<?php echo esc_attr($api_key); ?>" 
+                                class="regular-text"
+                                placeholder="Nhập API Key từ Pancake POS"
+                            />
+                            <p class="description">API Key để xác thực với Pancake POS API. Lấy từ tài khoản Pancake của bạn.</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="caremil_pancake_shop_id">Shop ID</label>
+                        </th>
+                        <td>
+                            <input 
+                                type="text" 
+                                id="caremil_pancake_shop_id" 
+                                name="caremil_pancake_shop_id" 
+                                value="<?php echo esc_attr($shop_id); ?>" 
+                                class="regular-text"
+                                placeholder="Nhập Shop ID"
+                            />
+                            <p class="description">ID của cửa hàng trên hệ thống Pancake POS.</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="caremil_pancake_base_url">API Base URL</label>
+                        </th>
+                        <td>
+                            <input 
+                                type="url" 
+                                id="caremil_pancake_base_url" 
+                                name="caremil_pancake_base_url" 
+                                value="<?php echo esc_attr($base_url); ?>" 
+                                class="regular-text"
+                                placeholder="https://pos.pages.fm/api/v1"
+                            />
+                            <p class="description">URL cơ sở của Pancake POS API. Mặc định: <code>https://pos.pages.fm/api/v1</code></p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <p class="submit">
+                <input type="submit" name="test_connection" id="test_connection" class="button button-secondary" value="Kiểm Tra Kết Nối" style="margin-right: 10px;">
+                <input type="submit" name="submit" id="submit" class="button button-primary" value="Lưu Cài Đặt">
+            </p>
+        </form>
+        
+        <?php
+        // Hiển thị trạng thái kết nối hiện tại
+        if (function_exists('caremil_check_pancake_connection')) {
+            $current_status = caremil_check_pancake_connection();
+            $status_class = $current_status ? 'notice-success' : 'notice-error';
+            $status_text = $current_status ? '✓ Đang kết nối' : '✗ Không kết nối được';
+            $status_message = $current_status 
+                ? 'Hệ thống đang kết nối với Pancake POS thành công.' 
+                : 'Hệ thống không thể kết nối với Pancake POS. Vui lòng kiểm tra cài đặt.';
+            ?>
+            <div class="notice <?php echo $status_class; ?> is-dismissible" style="margin-top: 20px;">
+                <p><strong><?php echo $status_text; ?>:</strong> <?php echo $status_message; ?></p>
+            </div>
+            <?php
+            
+            // Hiển thị thông tin debug nếu không kết nối được
+            if (!$current_status) {
+                $debug_info = get_option('caremil_pancake_debug_info', array());
+                if (!empty($debug_info)) {
+                    ?>
+                    <div class="notice notice-info" style="margin-top: 20px;">
+                        <h3 style="margin-top: 0;">Thông tin Debug (Lần kiểm tra cuối: <?php echo isset($debug_info['timestamp']) ? esc_html($debug_info['timestamp']) : 'N/A'; ?>)</h3>
+                        <table class="widefat" style="margin-top: 10px;">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 200px;">API Key</th>
+                                    <td><?php echo !empty($debug_info['api_key_set']) ? '<span style="color: green;">✓ Đã cấu hình</span>' : '<span style="color: red;">✗ Chưa cấu hình</span>'; ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Shop ID</th>
+                                    <td><?php echo !empty($debug_info['shop_id_set']) ? '<span style="color: green;">✓ Đã cấu hình</span> (' . esc_html($debug_info['shop_id'] ?? 'N/A') . ')' : '<span style="color: red;">✗ Chưa cấu hình</span>'; ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Base URL</th>
+                                    <td><?php echo !empty($debug_info['base_url_set']) ? '<span style="color: green;">✓ Đã cấu hình</span> (' . esc_html($debug_info['base_url'] ?? 'N/A') . ')' : '<span style="color: red;">✗ Chưa cấu hình</span>'; ?></td>
+                                </tr>
+                                <?php if (!empty($debug_info['missing'])): ?>
+                                <tr>
+                                    <th>Thiếu cấu hình</th>
+                                    <td><span style="color: red;"><?php echo esc_html(implode(', ', $debug_info['missing'])); ?></span></td>
+                                </tr>
+                                <?php endif; ?>
+                                <?php if (!empty($debug_info['error'])): ?>
+                                <tr>
+                                    <th>Lỗi</th>
+                                    <td><span style="color: red;"><?php echo esc_html($debug_info['error']); ?></span></td>
+                                </tr>
+                                <?php endif; ?>
+                                <?php if (!empty($debug_info['error_code'])): ?>
+                                <tr>
+                                    <th>Mã lỗi</th>
+                                    <td><code><?php echo esc_html($debug_info['error_code']); ?></code></td>
+                                </tr>
+                                <?php endif; ?>
+                                <?php if (!empty($debug_info['http_status'])): ?>
+                                <tr>
+                                    <th>HTTP Status</th>
+                                    <td><code><?php echo esc_html($debug_info['http_status']); ?></code></td>
+                                </tr>
+                                <?php endif; ?>
+                                <?php if (!empty($debug_info['test_url'])): ?>
+                                <tr>
+                                    <th>Test URL</th>
+                                    <td><code style="word-break: break-all;"><?php echo esc_html($debug_info['test_url']); ?></code></td>
+                                </tr>
+                                <?php endif; ?>
+                                <?php if (!empty($debug_info['response_body'])): ?>
+                                <tr>
+                                    <th>Response Body</th>
+                                    <td><pre style="max-height: 200px; overflow: auto; background: #f5f5f5; padding: 10px; border: 1px solid #ddd;"><?php echo esc_html($debug_info['response_body']); ?></pre></td>
+                                </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                        <p style="margin-top: 10px;">
+                            <button type="button" class="button button-secondary" onclick="location.reload();">Làm mới trang</button>
+                            <button type="button" class="button button-secondary" onclick="document.getElementById('test_connection').click();">Kiểm tra lại kết nối</button>
+                        </p>
+                    </div>
+                    <?php
+                }
+            }
+        }
+        ?>
+        
+        <hr>
+        
+        <div class="card" style="max-width: 800px;">
+            <h2>Hướng dẫn</h2>
+            <ol>
+                <li><strong>API Key:</strong> Đăng nhập vào tài khoản Pancake POS của bạn, vào phần Settings/API để lấy API Key.</li>
+                <li><strong>Shop ID:</strong> ID cửa hàng của bạn trên Pancake POS. Thường hiển thị trong URL hoặc Settings.</li>
+                <li><strong>API Base URL:</strong> URL cơ sở của API. Nếu bạn dùng Pancake Pages, URL mặc định là <code>https://pos.pages.fm/api/v1</code></li>
+            </ol>
+            <p><strong>Lưu ý:</strong> Sau khi thay đổi cài đặt, hãy kiểm tra kết nối bằng cách thử đăng nhập hoặc xem danh sách khách hàng.</p>
+        </div>
+    </div>
+    
+    <style>
+        .form-table th {
+            width: 200px;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .card h2 {
+            margin-top: 0;
+        }
+        .card ol {
+            margin-left: 20px;
+        }
+        .card code {
+            background: #f0f0f1;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+    <?php
+}
+
+// 3. Hiển thị danh sách khách hàng trong Admin
+function render_pancake_customers_page() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'pancake_customers';
+    
+    // Xử lý xóa nếu có
+    if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
+        $wpdb->delete($table_name, ['id' => intval($_GET['id'])]);
+        echo '<div class="notice notice-success is-dismissible"><p>Đã xóa khách hàng.</p></div>';
+    }
+
+    // Lấy dữ liệu
+    $results = $wpdb->get_results("SELECT * FROM $table_name ORDER BY created_at DESC");
+    ?>
+    <div class="wrap">
+        <h1 class="wp-heading-inline">Danh Sách Khách Hàng (Pancake POS)</h1>
+        <hr class="wp-header-end">
+        
+        <table class="wp-list-table widefat fixed striped">
+            <thead>
+                <tr>
+                    <th width="50">ID</th>
+                    <th>Họ Tên</th>
+                    <th>Số Điện Thoại</th>
+                    <th>Email</th>
+                    <th>Pancake ID</th>
+                    <th>Ngày Tạo</th>
+                    <th width="100">Hành Động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($results)): ?>
+                    <?php foreach ($results as $row): ?>
+                        <tr>
+                            <td><?php echo $row->id; ?></td>
+                            <td><strong><?php echo esc_html($row->name); ?></strong></td>
+                            <td><?php echo esc_html($row->phone); ?></td>
+                            <td><?php echo esc_html($row->email); ?></td>
+                            <td><?php echo esc_html($row->pancake_id); ?></td>
+                            <td><?php echo date('d/m/Y H:i', strtotime($row->created_at)); ?></td>
+                            <td>
+                                <a href="?page=pancake-customers&action=delete&id=<?php echo $row->id; ?>" 
+                                   onclick="return confirm('Bạn có chắc chắn muốn xóa?')" 
+                                   style="color:red;">Xóa</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr><td colspan="7">Chưa có khách hàng nào.</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php
+}
+
+/**
+ * --------------------------------------------------------------------------
+ * MODULE: SEPAY DATABASE MIGRATION
+ * Tự động tạo bảng giao dịch SePay khi theme được load.
+ * --------------------------------------------------------------------------
+ */
+add_action( 'init', 'caremil_sepay_auto_create_table' );
+
+function caremil_sepay_auto_create_table() {
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'sepay_transactions';
+
+    // Nếu bảng đã tồn tại thì bỏ qua để tối ưu.
+    $existing = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+    if ( $existing === $table_name ) {
+        return;
+    }
+
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE {$table_name} (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        gateway varchar(100) NOT NULL,
+        transaction_date datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+        account_number varchar(100) DEFAULT '' NOT NULL,
+        sub_account varchar(250) DEFAULT '' NOT NULL,
+        amount_in decimal(20,2) DEFAULT '0.00' NOT NULL,
+        amount_out decimal(20,2) DEFAULT '0.00' NOT NULL,
+        accumulated decimal(20,2) DEFAULT '0.00' NOT NULL,
+        code varchar(250) DEFAULT '' NOT NULL,
+        transaction_content text DEFAULT '' NOT NULL,
+        reference_number varchar(255) DEFAULT '' NOT NULL,
+        body text DEFAULT '' NOT NULL,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) {$charset_collate};";
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta( $sql );
+
+    // Ghi log để tiện debug khi deploy.
+    error_log( 'SePay table ensured: ' . $table_name );
+}
+
+/**
+ * --------------------------------------------------------------------------
+ * MODULE: SEPAY WEBHOOK ENDPOINT
+ * URL: /wp-json/sepay/v1/webhook
+ * --------------------------------------------------------------------------
+ */
+add_action(
+    'rest_api_init',
+    function () {
+        register_rest_route(
+            'sepay/v1',
+            '/webhook',
+            array(
+                'methods'             => 'POST',
+                'callback'            => 'caremil_handle_sepay_webhook',
+                'permission_callback' => '__return_true',
+            )
+        );
+    }
+);
+
+function caremil_handle_sepay_webhook( WP_REST_Request $request ) {
+    global $wpdb;
+
+    // Bảo mật: yêu cầu API Key trong header.
+    $expected_api_key = caremil_get_sepay_api_key();
+    if ( empty( $expected_api_key ) ) {
+        return new WP_Error( 'missing_key', 'SePay API Key is not configured.', array( 'status' => 500 ) );
+    }
+
+    $provided_key = $request->get_header( 'x-api-key' );
+    if ( empty( $provided_key ) ) {
+        $provided_key = $request->get_header( 'x-sepay-api-key' );
+    }
+    // SePay UI "API Key" thường gửi header Authorization: Apikey <KEY>
+    if ( empty( $provided_key ) ) {
+        $auth_header = $request->get_header( 'authorization' );
+        if ( $auth_header && preg_match( '/Apikey\\s+(.*)/i', $auth_header, $m ) ) {
+            $provided_key = trim( $m[1] );
+        }
+    }
+
+    if ( $expected_api_key !== $provided_key ) {
+        return new WP_Error( 'unauthorized', 'Invalid API Key.', array( 'status' => 401 ) );
+    }
+
+    $params = $request->get_json_params();
+    if ( empty( $params ) ) {
+        return new WP_Error( 'no_data', 'No JSON data received', array( 'status' => 400 ) );
+    }
+
+    $data = array(
+        'gateway'             => isset( $params['gateway'] ) ? sanitize_text_field( $params['gateway'] ) : '',
+        'transaction_date'    => isset( $params['transactionDate'] ) ? sanitize_text_field( $params['transactionDate'] ) : '',
+        'account_number'      => isset( $params['accountNumber'] ) ? sanitize_text_field( $params['accountNumber'] ) : '',
+        'sub_account'         => isset( $params['subAccount'] ) ? sanitize_text_field( $params['subAccount'] ) : '',
+        'code'                => isset( $params['code'] ) ? sanitize_text_field( $params['code'] ) : '',
+        'transaction_content' => isset( $params['content'] ) ? sanitize_textarea_field( $params['content'] ) : '',
+        'reference_number'    => isset( $params['referenceCode'] ) ? sanitize_text_field( $params['referenceCode'] ) : '',
+        'body'                => isset( $params['description'] ) ? sanitize_textarea_field( $params['description'] ) : '',
+        'accumulated'         => isset( $params['accumulated'] ) ? floatval( $params['accumulated'] ) : 0,
+        'amount_in'           => 0,
+        'amount_out'          => 0,
+    );
+
+    $transfer_amount = isset( $params['transferAmount'] ) ? floatval( $params['transferAmount'] ) : 0;
+    $transfer_type   = isset( $params['transferType'] ) ? sanitize_text_field( $params['transferType'] ) : '';
+
+    if ( 'in' === $transfer_type ) {
+        $data['amount_in'] = $transfer_amount;
+    } elseif ( 'out' === $transfer_type ) {
+        $data['amount_out'] = $transfer_amount;
+    }
+
+    $table_name = $wpdb->prefix . 'sepay_transactions';
+    $inserted   = $wpdb->insert( $table_name, $data );
+
+    if ( $inserted ) {
+        $transaction_id = $wpdb->insert_id;
+
+        // Hook mở rộng để xử lý nghiệp vụ riêng.
+        do_action( 'sepay_transaction_received', $transaction_id, $data );
+
+        // Đánh dấu trạng thái thanh toán cho mã đơn (nếu có).
+        if ( ! empty( $data['code'] ) ) {
+            caremil_mark_order_paid( $data['code'], $data );
+        }
+
+        return new WP_REST_Response(
+            array(
+                'success' => true,
+                'id'      => $transaction_id,
+            ),
+            200
+        );
+    }
+
+    return new WP_Error( 'db_error', 'Cannot insert to database: ' . $wpdb->last_error, array( 'status' => 500 ) );
+}
+
+/**
+ * Lấy SePay API Key: ưu tiên ENV -> constant -> option.
+ */
+function caremil_get_sepay_api_key() {
+    $env_key = getenv( 'SEPAY_API_KEY' );
+    if ( ! empty( $env_key ) ) {
+        return $env_key;
+    }
+
+    if ( defined( 'SEPAY_API_KEY' ) && SEPAY_API_KEY ) {
+        return SEPAY_API_KEY;
+    }
+
+    $option_key = get_option( 'caremil_sepay_api_key', '' );
+    if ( ! empty( $option_key ) ) {
+        return $option_key;
+    }
+
+    // Fallback theo yêu cầu: dùng key đặt sẵn trong theme.
+    if ( defined( 'CAREMIL_SEPAY_DEFAULT_KEY' ) && CAREMIL_SEPAY_DEFAULT_KEY ) {
+        return CAREMIL_SEPAY_DEFAULT_KEY;
+    }
+
+    return '';
+}
+
+/**
+ * Lưu trạng thái đơn đã thanh toán (dựa trên mã code trong nội dung chuyển khoản).
+ */
+function caremil_mark_order_paid( $order_code, $transaction ) {
+    $normalized = sanitize_text_field( $order_code );
+    if ( empty( $normalized ) ) {
+        return;
+    }
+
+    // Lưu trạng thái đơn theo option; có thể thay bằng bảng riêng nếu cần.
+    update_option(
+        'caremil_payment_status_' . $normalized,
+        array(
+            'status'       => 'paid',
+            'updated_at'   => current_time( 'mysql' ),
+            'transaction'  => $transaction,
+        ),
+        false
+    );
+
+    /**
+     * Hook cho dev: bắt sự kiện đơn được đánh dấu paid.
+     * Tham số: $normalized (mã đơn), $transaction (array từ webhook).
+     */
+    do_action( 'caremil_order_paid', $normalized, $transaction );
+}
+
+/**
+ * Webhook URL ngắn: /hooks/sepay-payment hoặc /hooks/sepay-payment/{token}
+ * Dùng khi không cấu hình được header trên SePay. Bảo vệ bằng token riêng.
+ */
+add_action(
+    'init',
+    function () {
+        add_rewrite_rule(
+            '^hooks/sepay-payment/?([^/]*)/?$',
+            'index.php?caremil_sepay_hook=1&token=$matches[1]',
+            'top'
+        );
+        add_rewrite_rule(
+            '^hooks/sepay-payment/?$',
+            'index.php?caremil_sepay_hook=1',
+            'top'
+        );
+    }
+);
+
+add_filter(
+    'query_vars',
+    function ( $vars ) {
+        $vars[] = 'caremil_sepay_hook';
+        $vars[] = 'token';
+        return $vars;
+    }
+);
+
+add_action(
+    'template_redirect',
+    function () {
+        if ( intval( get_query_var( 'caremil_sepay_hook', 0 ) ) !== 1 ) {
+            return;
+        }
+
+        if ( $_SERVER['REQUEST_METHOD'] !== 'POST' ) {
+            status_header( 405 );
+            wp_send_json_error( array( 'message' => 'Method Not Allowed' ), 405 );
+        }
+
+        $token          = get_query_var( 'token', '' );
+        $expected_token = caremil_get_sepay_webhook_token();
+        if ( $expected_token && $token !== $expected_token ) {
+            status_header( 401 );
+            wp_send_json_error( array( 'message' => 'Unauthorized' ), 401 );
+        }
+
+        $body = file_get_contents( 'php://input' );
+        $json = json_decode( $body, true );
+
+        $request = new WP_REST_Request( 'POST', '/sepay/v1/webhook' );
+        $request->set_json_params( $json );
+        $request->set_header( 'x-api-key', caremil_get_sepay_api_key() );
+
+        $response = caremil_handle_sepay_webhook( $request );
+
+        if ( is_wp_error( $response ) ) {
+            $status = $response->get_error_data()['status'] ?? 500;
+            status_header( $status );
+            wp_send_json_error( array( 'message' => $response->get_error_message() ), $status );
+        }
+
+        if ( $response instanceof WP_REST_Response ) {
+            $status = $response->get_status();
+            $data   = $response->get_data();
+            status_header( $status );
+            wp_send_json_success( $data, $status );
+        }
+
+        wp_send_json( $response );
+    }
+);
+
+/**
+ * Lấy token bảo vệ URL ngắn.
+ */
+function caremil_get_sepay_webhook_token() {
+    $env_token = getenv( 'SEPAY_WEBHOOK_TOKEN' );
+    if ( ! empty( $env_token ) ) {
+        return $env_token;
+    }
+
+    if ( defined( 'SEPAY_WEBHOOK_TOKEN' ) && SEPAY_WEBHOOK_TOKEN ) {
+        return SEPAY_WEBHOOK_TOKEN;
+    }
+
+    $option_token = get_option( 'caremil_sepay_webhook_token', '' );
+    if ( ! empty( $option_token ) ) {
+        return $option_token;
+    }
+
+    return '';
+}
+
+/**
+ * REST: Kiểm tra trạng thái thanh toán theo mã code (public để front-end poll).
+ * GET /wp-json/caremil/v1/payment-status?code=DH12345
+ */
+add_action(
+    'rest_api_init',
+    function () {
+        register_rest_route(
+            'caremil/v1',
+            '/payment-status',
+            array(
+                'methods'             => WP_REST_Server::READABLE,
+                'permission_callback' => '__return_true',
+                'callback'            => 'caremil_rest_get_payment_status',
+                'args'                => array(
+                    'code' => array(
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ),
+                ),
+            )
+        );
+    }
+);
+
+function caremil_rest_get_payment_status( WP_REST_Request $request ) {
+    $code = $request->get_param( 'code' );
+    if ( empty( $code ) ) {
+        return new WP_Error( 'missing_code', 'Thiếu mã đơn (code).', array( 'status' => 400 ) );
+    }
+
+    $data = get_option( 'caremil_payment_status_' . $code, null );
+    if ( empty( $data ) ) {
+        return rest_ensure_response(
+            array(
+                'paid'  => false,
+                'code'  => $code,
+                'found' => false,
+            )
+        );
+    }
+
+    return rest_ensure_response(
+        array(
+            'paid'        => isset( $data['status'] ) && 'paid' === $data['status'],
+            'code'        => $code,
+            'updated_at'  => isset( $data['updated_at'] ) ? $data['updated_at'] : null,
+            'transaction' => isset( $data['transaction'] ) ? $data['transaction'] : null,
+        )
+    );
+}

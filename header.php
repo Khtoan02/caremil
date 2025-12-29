@@ -4,6 +4,11 @@
  *
  * @package Caremil
  */
+
+// Khởi động session để kiểm tra trạng thái đăng nhập
+if (!session_id()) {
+    session_start();
+}
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -81,88 +86,5 @@
 <body class="bg-gray-50">
 
     <!-- === BẮT ĐẦU PHẦN HEADER === -->
-
-    <!-- NAVIGATION BAR (Full Width, Sticky) -->
-    <nav class="fixed w-full z-50 top-0 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-300 h-20 flex items-center" id="navbar">
-        <div class="container mx-auto px-4 md:px-6">
-            <div class="flex justify-between items-center w-full">
-                
-                <!-- Logo -->
-                <a href="/" class="flex items-center gap-2 group">
-                    <!-- Icon Lá (Thay bằng ảnh logo thật nếu có) -->
-                    <div class="w-10 h-10 bg-brand-soft rounded-full flex items-center justify-center text-brand-gold group-hover:rotate-12 transition-transform duration-300">
-                        <i class="fas fa-leaf text-xl"></i>
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-2xl font-display font-black text-brand-navy leading-none tracking-tight">Care<span class="text-brand-blue">MIL</span></span>
-                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Plant Nutrition</span>
-                    </div>
-                </a>
-                
-                <!-- Desktop Menu -->
-                <div class="hidden md:flex items-center space-x-8 font-bold text-gray-500 text-base font-sans">
-                    <a href="/" class="nav-link active text-brand-navy hover:text-brand-blue transition">Trang Chủ</a>
-                    <a href="/cua-hang" class="nav-link hover:text-brand-blue transition">Sản Phẩm</a>
-                    <a href="/cau-chuyen" class="nav-link hover:text-brand-blue transition">Câu Chuyện</a>
-                    <a href="/lien-he" class="nav-link hover:text-brand-blue transition">Liên Hệ</a>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="hidden md:flex items-center gap-4">
-                    <!-- Search Icon -->
-                    <button class="text-gray-400 hover:text-brand-blue transition">
-                        <i class="fas fa-search text-lg"></i>
-                    </button>
-                    
-                    <!-- Cart Icon -->
-                    <a href="/gio-hang" class="relative text-gray-400 hover:text-brand-blue transition mr-2">
-                        <i class="fas fa-shopping-cart text-lg"></i>
-                        <span class="absolute -top-2 -right-2 bg-brand-pink text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
-                    </a>
-
-                    <!-- Buy Button -->
-                    <a href="/cua-hang" class="bg-brand-navy text-white font-bold py-2.5 px-6 rounded-full shadow-md hover:bg-brand-blue hover:shadow-lg transition transform hover:-translate-y-0.5 text-sm">
-                        Mua Ngay
-                    </a>
-                </div>
-                
-                <!-- Mobile Menu Button (Hamburger) -->
-                <button onclick="toggleMobileMenu()" class="md:hidden text-brand-navy text-2xl p-2 focus:outline-none transition">
-                    <i class="fas fa-bars" id="menu-icon"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Mobile Menu Dropdown (Full Width) -->
-        <div id="mobile-menu" class="absolute top-20 left-0 w-full bg-white border-t border-gray-100 font-sans shadow-lg md:hidden">
-            <div class="flex flex-col p-4 space-y-2">
-                <a href="/" class="py-3 px-4 text-brand-navy bg-brand-soft/50 rounded-xl font-bold">Trang Chủ</a>
-                <a href="/cua-hang" class="py-3 px-4 hover:bg-gray-50 rounded-xl font-bold text-gray-600">Sản Phẩm</a>
-                <a href="/cau-chuyen" class="py-3 px-4 hover:bg-gray-50 rounded-xl font-bold text-gray-600">Câu Chuyện</a>
-                <a href="/lien-he" class="py-3 px-4 hover:bg-gray-50 rounded-xl font-bold text-gray-600">Liên Hệ</a>
-                <div class="h-px bg-gray-100 my-2"></div>
-                <a href="/cua-hang" class="py-3 px-4 bg-brand-gold text-brand-navy rounded-xl font-bold text-center shadow-sm">
-                    <i class="fas fa-shopping-cart mr-2"></i> Đặt Hàng Ngay
-                </a>
-            </div>
-        </div>
-    </nav>
+    <?php get_template_part( 'template-parts/navbar' ); ?>
     <!-- === KẾT THÚC PHẦN HEADER === -->
-
-    <!-- Script điều khiển Mobile Menu -->
-    <script>
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobile-menu');
-            const icon = document.getElementById('menu-icon');
-            
-            menu.classList.toggle('open');
-            
-            if (menu.classList.contains('open')) {
-                icon.classList.remove('fa-bars');
-                icon.classList.add('fa-times');
-            } else {
-                icon.classList.remove('fa-times');
-                icon.classList.add('fa-bars');
-            }
-        }
-    </script>
