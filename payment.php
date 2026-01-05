@@ -11,9 +11,18 @@ get_header();
 // Lấy thông tin đơn hàng từ cart
 $cart = caremil_get_cart();
 $cart_total = caremil_get_cart_total();
+// Fallback if total is 0 (direct access without cart) -> check URL total
+if ($cart_total == 0 && isset($_GET['total'])) {
+    $cart_total = floatval($_GET['total']);
+}
 
-// Tạo order ID ngẫu nhiên (6 chữ số)
-$order_id = rand(100000, 999999);
+// Lấy Order ID từ URL (được chuyển từ checkout)
+$order_id = isset($_GET['order_id']) ? sanitize_text_field($_GET['order_id']) : '';
+
+if (empty($order_id)) {
+    // Fallback cho testing nếu không có ID thật
+    $order_id = rand(100000, 999999);
+}
 
 // Nếu có orderData từ sessionStorage (từ checkout), sẽ được xử lý bằng JavaScript
 ?>

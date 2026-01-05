@@ -5,6 +5,15 @@
  * @package Caremil
  */
 
+// Bypass: Load single-product template if this is a product
+if (get_post_type() === 'product') {
+    $product_template = locate_template('single-product.php');
+    if ($product_template) {
+        include($product_template);
+        return;
+    }
+}
+
 get_header();
 ?>
 
@@ -61,16 +70,3 @@ get_header();
 <?php
 get_sidebar();
 get_footer();
-
-
-
-
-
-
-
-
-
-
-
-
-

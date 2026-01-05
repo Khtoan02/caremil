@@ -2,7 +2,7 @@
 /**
  * Template Name: Trang CareMIL
  * Template Post Type: page
- * Description: Trang sản phẩm CareMIL với thiết kế đầy đủ
+ * Description: Trang Sản phẩm với thiết kế đầy đủ
  *
  * @package Caremil
  */

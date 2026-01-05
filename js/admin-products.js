@@ -210,7 +210,7 @@
                 wp.element.createElement('div', { className: 'max-w-6xl mx-auto' },
                     wp.element.createElement('div', { className: 'flex items-center justify-between mb-6' },
                         wp.element.createElement('div', null,
-                            wp.element.createElement('h1', { className: 'text-2xl font-bold text-slate-800' }, 'Trình quản lý sản phẩm CareMIL'),
+                            wp.element.createElement('h1', { className: 'text-2xl font-bold text-slate-800' }, 'Trình quản lý Sản phẩm'),
                             wp.element.createElement('p', { className: 'text-sm text-slate-500' }, 'Tạo/sửa nhanh, tối ưu cho team marketing.')
                         ),
                         wp.element.createElement('div', { className: 'flex gap-3' },

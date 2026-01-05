@@ -14,6 +14,25 @@ if ( ! defined( 'CAREMIL_SEPAY_DEFAULT_KEY' ) ) {
     define( 'CAREMIL_SEPAY_DEFAULT_KEY', 'SNTUPDJ9NMDWKOUOIE8YRFGI3CCO7GFJVLN6GDZ20QTPG4T5M1JHBX0MUPB84UHF' );
 }
 
+// Include product sync module
+require_once get_template_directory() . '/product-sync.php';
+
+// Include product menu integration
+require_once get_template_directory() . '/product-menu-integration.php';
+
+// Include custom product editor
+require_once get_template_directory() . '/product-editor.php';
+
+
+// Include Coupon Management System
+require_once get_template_directory() . '/includes/coupons.php';
+
+// Include new Order API
+require_once get_template_directory() . '/includes/order-api.php';
+
+// Include Viettel Post Shipping Calculator
+require_once get_template_directory() . '/includes/viettel-shipping.php';
+
 /**
  * Theme Setup
  */
@@ -645,12 +664,14 @@ function caremil_enqueue_trial_admin_assets( $hook ) {
 add_action( 'admin_enqueue_scripts', 'caremil_enqueue_trial_admin_assets' );
 
 /**
- * Admin UI: trang quản lý nhanh & form thêm/sửa sản phẩm (tham khảo product-list/admin-product).
+ * OLD: Admin UI for caremil_product CPT
+ * DISABLED - Now using product-menu-integration.php instead
  */
+/*
 function caremil_register_product_admin_pages() {
     add_submenu_page(
         'edit.php?post_type=caremil_product',
-        __( 'Quản lý sản phẩm CareMIL', 'caremil' ),
+        __( 'Quản lý Sản phẩm', 'caremil' ),
         __( 'Quản lý sản phẩm (UI)', 'caremil' ),
         'edit_posts',
         'caremil-products-app',
@@ -659,7 +680,7 @@ function caremil_register_product_admin_pages() {
 
     add_submenu_page(
         'edit.php?post_type=caremil_product',
-        __( 'Thêm sản phẩm CareMIL', 'caremil' ),
+        __( 'Thêm Sản phẩm', 'caremil' ),
         __( 'Thêm sản phẩm (UI)', 'caremil' ),
         'edit_posts',
         'caremil-product-designer',
@@ -668,7 +689,7 @@ function caremil_register_product_admin_pages() {
 
     add_submenu_page(
         'edit.php?post_type=caremil_product',
-        __( 'Nhóm sản phẩm CareMIL', 'caremil' ),
+        __( 'Nhóm Sản phẩm', 'caremil' ),
         __( 'Nhóm sản phẩm (UI)', 'caremil' ),
         'edit_posts',
         'caremil-product-groups',
@@ -676,10 +697,13 @@ function caremil_register_product_admin_pages() {
     );
 }
 add_action( 'admin_menu', 'caremil_register_product_admin_pages' );
+*/
 
-/**
- * Ẩn các submenu mặc định của CPT (Add new, taxonomy) để tránh trùng với UI custom.
+/*
+ * OLD: Hide default product submenus
+ * DISABLED - Not needed with new integration
  */
+/*
 function caremil_hide_default_product_submenus() {
     remove_submenu_page( 'edit.php?post_type=caremil_product', 'post-new.php?post_type=caremil_product' );
     remove_submenu_page( 'edit.php?post_type=caremil_product', 'edit-tags.php?taxonomy=caremil_product_cat&post_type=caremil_product' );
@@ -688,14 +712,17 @@ function caremil_hide_default_product_submenus() {
     remove_menu_page( 'edit.php?post_type=caremil_product' );
 }
 add_action( 'admin_menu', 'caremil_hide_default_product_submenus', 999 );
+*/
 
 /**
- * Tạo menu chính riêng cho CareMIL Products, trỏ trực tiếp tới UI custom.
+ * OLD: Custom menu for CareMIL Products
+ * DISABLED - Now using product-menu-integration.php instead
  */
+/*
 function caremil_register_custom_product_menu() {
     add_menu_page(
-        __( 'Sản phẩm CareMIL', 'caremil' ),
-        __( 'Sản phẩm CareMIL', 'caremil' ),
+        __( 'Sản phẩm', 'caremil' ),
+        __( 'Sản phẩm', 'caremil' ),
         'edit_posts',
         'caremil-products-app',
         'caremil_render_product_admin_page',
@@ -714,7 +741,7 @@ function caremil_register_custom_product_menu() {
 
     add_submenu_page(
         'caremil-products-app',
-        __( 'Thêm sản phẩm CareMIL', 'caremil' ),
+        __( 'Thêm Sản phẩm', 'caremil' ),
         __( 'Thêm sản phẩm (UI)', 'caremil' ),
         'edit_posts',
         'caremil-product-designer',
@@ -723,7 +750,7 @@ function caremil_register_custom_product_menu() {
 
     add_submenu_page(
         'caremil-products-app',
-        __( 'Nhóm sản phẩm CareMIL', 'caremil' ),
+        __( 'Nhóm Sản phẩm', 'caremil' ),
         __( 'Nhóm sản phẩm (UI)', 'caremil' ),
         'edit_posts',
         'caremil-product-groups',
@@ -731,6 +758,7 @@ function caremil_register_custom_product_menu() {
     );
 }
 add_action( 'admin_menu', 'caremil_register_custom_product_menu', 20 );
+*/
 
 /**
  * Thêm body class để style áp dụng đúng cho các trang UI custom.
@@ -1586,7 +1614,8 @@ function caremil_strip_wp_styles_for_landing() {
 add_action( 'wp_enqueue_scripts', 'caremil_strip_wp_styles_for_landing', 100 );
 
 /**
- * Custom Post Type: CareMIL Products
+ * Custom Post Type: Products (for Pancake sync + manual)
+ * Changed from 'caremil_product' to 'product' for integration
  */
 function caremil_register_product_cpt() {
     $labels = array(
@@ -1600,37 +1629,43 @@ function caremil_register_product_cpt() {
         'search_items'       => __( 'Tìm sản phẩm', 'caremil' ),
         'not_found'          => __( 'Không tìm thấy sản phẩm.', 'caremil' ),
         'not_found_in_trash' => __( 'Không có sản phẩm trong thùng rác.', 'caremil' ),
-        'menu_name'          => __( 'Sản phẩm CareMIL', 'caremil' ),
+        'menu_name'          => __( 'Sản phẩm', 'caremil' ),
     );
 
     $args = array(
         'labels'             => $labels,
         'public'             => true,
+        'publicly_queryable' => true,
         'show_in_rest'       => true,
-        'has_archive'        => false,
+        'has_archive'        => true,
         'rewrite'            => array( 'slug' => 'san-pham' ),
         'supports'           => array( 'title', 'editor', 'excerpt', 'thumbnail', 'page-attributes' ),
-        'menu_icon'          => 'dashicons-products',
+        'menu_icon'          => 'dashicons-store',
+        'menu_position'      => 3,
+        'show_in_menu'       => true,
+        'capability_type'    => 'post',
+        'hierarchical'       => false,
     );
 
-    register_post_type( 'caremil_product', $args );
+    register_post_type( 'product', $args ); // Changed from 'caremil_product' to 'product'
 
     $tax_labels = array(
-        'name'          => __( 'Nhóm sản phẩm', 'caremil' ),
-        'singular_name' => __( 'Nhóm sản phẩm', 'caremil' ),
-        'menu_name'     => __( 'Nhóm sản phẩm', 'caremil' ),
-        'add_new_item'  => __( 'Thêm nhóm mới', 'caremil' ),
-        'edit_item'     => __( 'Sửa nhóm', 'caremil' ),
+        'name'          => __( 'Danh mục sản phẩm', 'caremil' ),
+        'singular_name' => __( 'Danh mục', 'caremil' ),
+        'menu_name'     => __( 'Danh mục', 'caremil' ),
+        'add_new_item'  => __( 'Thêm danh mục mới', 'caremil' ),
+        'edit_item'     => __( 'Sửa danh mục', 'caremil' ),
     );
 
     register_taxonomy(
-        'caremil_product_cat',
-        'caremil_product',
+        'product_category', // Changed from 'caremil_product_cat'
+        'product',          // Changed from 'caremil_product'
         array(
             'labels'       => $tax_labels,
             'hierarchical' => true,
             'show_ui'      => true,
             'show_in_rest' => true,
+            'show_in_menu' => true,
         )
     );
 
@@ -1655,7 +1690,7 @@ add_action( 'init', 'caremil_register_product_cpt' );
 function caremil_product_register_metabox() {
     add_meta_box(
         'caremil_product_meta',
-        __( 'Thông tin sản phẩm CareMIL', 'caremil' ),
+        __( 'Thông tin Sản phẩm', 'caremil' ),
         'caremil_product_render_metabox',
         'caremil_product',
         'normal',
@@ -1973,7 +2008,7 @@ function caremil_ajax_add_to_cart() {
     // Nếu không có thông tin sản phẩm từ POST, lấy từ database
     if ( empty( $price ) || empty( $image ) ) {
         $post = get_post( $product_id );
-        if ( ! $post || 'caremil_product' !== $post->post_type ) {
+        if ( ! $post || ! in_array( $post->post_type, array( 'caremil_product', 'product' ) ) ) {
             wp_send_json_error( array( 'message' => 'Sản phẩm không tồn tại' ) );
         }
         
@@ -2184,6 +2219,16 @@ if ( ! function_exists( 'caremil_get_pancake_base_url' ) ) {
     }
 }
 
+/**
+ * Lấy Pancake Warehouse ID từ options
+ */
+if ( ! function_exists( 'caremil_get_pancake_warehouse_id' ) ) {
+    function caremil_get_pancake_warehouse_id() {
+        $warehouse_id = get_option( 'caremil_pancake_warehouse_id', '' );
+        return $warehouse_id;
+    }
+}
+
 // Định nghĩa constants để tương thích với code cũ (chỉ dùng làm fallback)
 if ( ! defined( 'CAREMIL_PANCAKE_API_KEY' ) ) {
     define( 'CAREMIL_PANCAKE_API_KEY', '5a5e73eca1c14dacb904e75cfb8e98a2' );
@@ -2386,7 +2431,7 @@ if ( ! function_exists( 'caremil_pancake_request' ) ) {
     function caremil_pancake_request( $path, $query = array(), $method = 'GET', $body = null ) {
         $api_key = caremil_get_pancake_api_key();
         if ( empty( $api_key ) ) {
-            return null;
+            return array('success' => false, 'message' => 'Missing API Key');
         }
 
         $query = array_merge(
@@ -2413,18 +2458,67 @@ if ( ! function_exists( 'caremil_pancake_request' ) ) {
 
         $response = wp_remote_request( $url, $args );
         if ( is_wp_error( $response ) ) {
-            return null;
+            error_log('Pancake API Error (WP_Error): ' . $response->get_error_message());
+            return array('success' => false, 'message' => $response->get_error_message());
         }
 
         $status = wp_remote_retrieve_response_code( $response );
-        if ( $status < 200 || $status >= 300 ) {
-            return null;
-        }
-
         $payload = wp_remote_retrieve_body( $response );
         $data    = json_decode( $payload, true );
 
+        if ( $status < 200 || $status >= 300 ) {
+            error_log("Pancake API Failed ($status): " . print_r($payload, true));
+            return isset($data) && is_array($data) ? $data : array('success' => false, 'message' => "HTTP Error $status", 'body' => $payload);
+        }
+
         return $data ? $data : null;
+    }
+}
+
+/**
+ * Lấy danh sách kho hàng từ Pancake API
+ */
+if ( ! function_exists( 'caremil_get_pancake_warehouses' ) ) {
+    function caremil_get_pancake_warehouses( $force_refresh = false ) {
+        // Kiểm tra cache trước
+        $cache_key = 'caremil_pancake_warehouses';
+        $cache_time = 10 * MINUTE_IN_SECONDS; // Cache 10 phút
+        
+        if ( ! $force_refresh ) {
+            $cached = get_transient( $cache_key );
+            if ( $cached !== false ) {
+                return $cached;
+            }
+        }
+        
+        // Lấy shop ID
+        $shop_id = caremil_get_pancake_shop_id();
+        if ( empty( $shop_id ) ) {
+            return array();
+        }
+        
+        // Gọi API để lấy danh sách kho
+        $path = '/shops/' . $shop_id . '/warehouses';
+        $response = caremil_pancake_request( $path );
+        
+        if ( ! $response || empty( $response['data'] ) ) {
+            return array();
+        }
+        
+        $warehouses = array();
+        foreach ( $response['data'] as $wh ) {
+            $warehouses[] = array(
+                'id' => $wh['id'] ?? '',
+                'name' => $wh['name'] ?? 'Không có tên',
+                'address' => $wh['full_address'] ?? '',
+                'phone_number' => $wh['phone_number'] ?? '',
+            );
+        }
+        
+        // Lưu vào cache
+        set_transient( $cache_key, $warehouses, $cache_time );
+        
+        return $warehouses;
     }
 }
 
@@ -2590,27 +2684,210 @@ function create_pancake_customers_table() {
 // Chạy hàm này khi admin được khởi tạo (đảm bảo bảng luôn tồn tại)
 add_action('admin_init', 'create_pancake_customers_table');
 
-// 2. Thêm Menu quản lý vào Admin Dashboard
+/**
+ * AJAX handler: Lấy danh sách kho hàng
+ */
+function caremil_ajax_get_warehouses() {
+    // Verify nonce
+    check_ajax_referer('caremil_get_warehouses_nonce', 'nonce');
+    
+    // Kiểm tra quyền
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => 'Không có quyền truy cập'));
+    }
+    
+    // Lấy danh sách kho (force refresh = true)
+    $warehouses = caremil_get_pancake_warehouses(true);
+    
+    if (empty($warehouses)) {
+        wp_send_json_error(array('message' => 'Không thể lấy danh sách kho. Vui lòng kiểm tra kết nối Pancake.'));
+    }
+    
+    wp_send_json_success($warehouses);
+}
+add_action('wp_ajax_caremil_get_warehouses', 'caremil_ajax_get_warehouses');
+
+// 2. Thêm Menu Pancake POS vào Admin Dashboard (Gộp tất cả vào 1 menu)
 function register_pancake_menu_page() {
+    // Menu cha: Pancake POS
     add_menu_page(
-        'Khách hàng Pancake', // Page Title
-        'Khách hàng Pancake', // Menu Title
-        'manage_options',     // Capability (Chỉ admin)
-        'pancake-customers',  // Menu Slug
-        'render_pancake_customers_page', // Callback function
-        'dashicons-groups',   // Icon
-        6                     // Position
+        'Pancake POS',           // Page Title
+        'Pancake POS',           // Menu Title
+        'manage_options',        // Capability
+        'pancake-dashboard',     // Menu Slug (parent)
+        'render_pancake_dashboard_page', // Callback
+        'dashicons-store',       // Icon (Store icon)
+        6                        // Position
     );
     
-    // Thêm submenu Cài đặt Pancake
+    // Submenu 1: Cài đặt (Settings)
     add_submenu_page(
-        'pancake-customers',
-        'Cài đặt Pancake',
-        'Cài đặt Pancake',
+        'pancake-dashboard',     // Parent slug
+        'Cài đặt Pancake',      // Page title
+        '⚙️ Cài đặt',           // Menu title (with icon)
         'manage_options',
         'pancake-settings',
         'render_pancake_settings_page'
     );
+    
+    // Submenu 2: Khách hàng (Customers)
+    add_submenu_page(
+        'pancake-dashboard',
+        'Khách hàng Pancake',
+        '👥 Khách hàng',
+        'manage_options',
+        'pancake-customers',
+        'render_pancake_customers_page'
+    );
+    
+    // Đổi tên submenu đầu tiên (Dashboard) thành "Tổng quan"
+    global $submenu;
+    if (isset($submenu['pancake-dashboard'])) {
+        $submenu['pancake-dashboard'][0][0] = '📊 Tổng quan';
+    }
+}
+add_action('admin_menu', 'register_pancake_menu_page');
+
+// Dashboard page callback
+function render_pancake_dashboard_page() {
+    if (!current_user_can('manage_options')) {
+        wp_die(__('Bạn không có quyền truy cập trang này.'));
+    }
+    
+    $is_connected = function_exists('caremil_check_pancake_connection') && caremil_check_pancake_connection();
+    $shop_id = caremil_get_pancake_shop_id();
+    $warehouse_id = get_option('caremil_pancake_warehouse_id', '');
+    
+    // Count synced products
+    $synced_products = get_posts(array(
+        'post_type' => 'product',
+        'meta_key' => 'pancake_product_id',
+        'posts_per_page' => -1,
+        'post_status' => 'any'
+    ));
+    
+    ?>
+    <div class="wrap">
+        <h1>📦 Pancake POS - Tổng Quan</h1>
+        <p class="description">Quản lý tích hợp Pancake POS với WordPress</p>
+        
+        <div class="pancake-dashboard" style="margin-top: 30px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                
+                <!-- Connection Status Card -->
+                <div class="card" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <h2 style="margin-top: 0; display: flex; align-items: center; gap: 10px;">
+                        <span class="dashicons dashicons-admin-plugins" style="font-size: 24px; color: <?php echo $is_connected ? '#10b981' : '#ef4444'; ?>;"></span>
+                        Trạng thái kết nối
+                    </h2>
+                    <?php if ($is_connected): ?>
+                        <p style="font-size: 18px; color: #10b981; font-weight: bold;">
+                            ✓ Đã kết nối
+                        </p>
+                        <p style="color: #64748b;">Shop ID: <code><?php echo esc_html($shop_id); ?></code></p>
+                    <?php else: ?>
+                        <p style="font-size: 18px; color: #ef4444; font-weight: bold;">
+                            ✗ Chưa kết nối
+                        </p>
+                        <p><a href="<?php echo admin_url('admin.php?page=pancake-settings'); ?>" class="button button-primary">Cấu hình ngay</a></p>
+                    <?php endif; ?>
+                </div>
+                
+                <!-- Products Card -->
+                <div class="card" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <h2 style="margin-top: 0; display: flex; align-items: center; gap: 10px;">
+                        <span class="dashicons dashicons-products" style="font-size: 24px; color: #3b82f6;"></span>
+                        Sản phẩm đã đồng bộ
+                    </h2>
+                    <p style="font-size: 32px; font-weight: bold; margin: 10px 0; color: #0f172a;">
+                        <?php echo count($synced_products); ?>
+                    </p>
+                    <p>
+                        <a href="<?php echo admin_url('admin.php?page=pancake-product-sync'); ?>" class="button">
+                            🔄 Đồng bộ sản phẩm
+                        </a>
+                    </p>
+                </div>
+                
+                <!-- Warehouse Card -->
+                <div class="card" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <h2 style="margin-top: 0; display: flex; align-items: center; gap: 10px;">
+                        <span class="dashicons dashicons-building" style="font-size: 24px; color: #8b5cf6;"></span>
+                        Kho hàng
+                    </h2>
+                    <?php if ($warehouse_id): 
+                        $warehouse_name = '';
+                        if (function_exists('caremil_get_pancake_warehouses')) {
+                            $warehouses = caremil_get_pancake_warehouses();
+                            foreach ($warehouses as $wh) {
+                                if ($wh['id'] === $warehouse_id) {
+                                    $warehouse_name = $wh['name'];
+                                    break;
+                                }
+                            }
+                        }
+                    ?>
+                        <p style="font-size: 18px; font-weight: bold; color: #0f172a;">
+                            <?php echo esc_html($warehouse_name ? $warehouse_name : $warehouse_id); ?>
+                        </p>
+                        <p style="color: #64748b; font-size: 12px;">ID: <?php echo esc_html($warehouse_id); ?></p>
+                    <?php else: ?>
+                        <p style="color: #ef4444;">Chưa chọn kho</p>
+                        <p><a href="<?php echo admin_url('admin.php?page=pancake-settings'); ?>" class="button">Chọn kho</a></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="card" style="background: #fff; padding: 20px; margin-top: 20px; border: 1px solid #ccd0d4; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h2 style="margin-top: 0;">🚀 Thao tác nhanh</h2>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="<?php echo admin_url('admin.php?page=pancake-settings'); ?>" class="button button-secondary">
+                        ⚙️ Cài đặt Pancake
+                    </a>
+                    <a href="<?php echo admin_url('admin.php?page=pancake-customers'); ?>" class="button button-secondary">
+                        👥 Xem khách hàng
+                    </a>
+                    <a href="<?php echo admin_url('admin.php?page=pancake-product-sync'); ?>" class="button button-secondary">
+                        🔄 Đồng bộ sản phẩm
+                    </a>
+                    <?php if ($is_connected): ?>
+                    <a href="<?php echo admin_url('admin.php?page=pancake-settings'); ?>" class="button button-secondary">
+                        🔍 Kiểm tra kết nối
+                    </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <?php if (!$is_connected): ?>
+            <!-- Setup Guide -->
+            <div class="card" style="background: #fef3c7; padding: 20px; margin-top: 20px; border: 1px solid #fbbf24; border-radius: 8px;">
+                <h2 style="margin-top: 0; color: #92400e;">⚡ Hướng dẫn cài đặt</h2>
+                <ol style="margin-left: 20px; color: #92400e;">
+                    <li>Vào <strong>Cài đặt Pancake</strong></li>
+                    <li>Nhập <strong>API Key</strong> và <strong>Shop ID</strong></li>
+                    <li>Chọn <strong>Kho hàng</strong></li>
+                    <li>Click <strong>Kiểm tra kết nối</strong></li>
+                    <li>Sau khi kết nối thành công → <strong>Đồng bộ sản phẩm</strong></li>
+                </ol>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    
+    <style>
+        .pancake-dashboard .card h2 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .pancake-dashboard code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+    </style>
+    <?php
 }
 add_action('admin_menu', 'register_pancake_menu_page');
 
@@ -2645,6 +2922,17 @@ function caremil_register_pancake_settings() {
             'default' => 'https://pos.pages.fm/api/v1'
         )
     );
+    
+    register_setting(
+        'caremil_pancake_settings_group',
+        'caremil_pancake_warehouse_id',
+        array(
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => ''
+        )
+    );
+
 }
 add_action('admin_init', 'caremil_register_pancake_settings');
 
@@ -2704,6 +2992,7 @@ function render_pancake_settings_page() {
         update_option('caremil_pancake_api_key', sanitize_text_field($_POST['caremil_pancake_api_key']));
         update_option('caremil_pancake_shop_id', sanitize_text_field($_POST['caremil_pancake_shop_id']));
         update_option('caremil_pancake_base_url', esc_url_raw($_POST['caremil_pancake_base_url']));
+        update_option('caremil_pancake_warehouse_id', sanitize_text_field($_POST['caremil_pancake_warehouse_id']));
         
         // Clear cache connection status sau khi lưu
         delete_transient('caremil_pancake_connection_status');
@@ -2715,6 +3004,8 @@ function render_pancake_settings_page() {
     $api_key = get_option('caremil_pancake_api_key', '');
     $shop_id = get_option('caremil_pancake_shop_id', '');
     $base_url = get_option('caremil_pancake_base_url', 'https://pos.pages.fm/api/v1');
+    $warehouse_id = get_option('caremil_pancake_warehouse_id', '');
+
     
     ?>
     <div class="wrap">
@@ -2774,6 +3065,40 @@ function render_pancake_settings_page() {
                                 placeholder="https://pos.pages.fm/api/v1"
                             />
                             <p class="description">URL cơ sở của Pancake POS API. Mặc định: <code>https://pos.pages.fm/api/v1</code></p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="caremil_pancake_warehouse_id">Kho hàng (Warehouse)</label>
+                        </th>
+                        <td>
+                            <select 
+                                id="caremil_pancake_warehouse_id" 
+                                name="caremil_pancake_warehouse_id" 
+                                class="regular-text"
+                            >
+                                <option value="">-- Chọn kho hàng --</option>
+                                <?php
+                                // Lấy danh sách kho từ Pancake nếu đã kết nối
+                                if (function_exists('caremil_check_pancake_connection') && caremil_check_pancake_connection()) {
+                                    $warehouses = caremil_get_pancake_warehouses();
+                                    if (!empty($warehouses)) {
+                                        foreach ($warehouses as $wh) {
+                                            $selected = ($warehouse_id === $wh['id']) ? 'selected' : '';
+                                            echo '<option value="' . esc_attr($wh['id']) . '" ' . $selected . '>' . esc_html($wh['name']) . '</option>';
+                                        }
+                                    }
+                                }
+                                ?>
+                            </select>
+                            <button type="button" id="reload_warehouses" class="button button-secondary" style="margin-left: 10px;">
+                                <span class="dashicons dashicons-update" style="margin-top: 3px;"></span> Tải lại danh sách
+                            </button>
+                            <p class="description">Chọn kho hàng mặc định để lên đơn. Danh sách sẽ tự động tải khi kết nối thành công.</p>
+                            <div id="warehouse_loading" style="display: none; margin-top: 10px;">
+                                <span class="spinner is-active" style="float: none;"></span> Đang tải danh sách kho...
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -2906,8 +3231,57 @@ function render_pancake_settings_page() {
             border-radius: 3px;
         }
     </style>
+    
+    <script>
+    jQuery(document).ready(function($) {
+        $('#reload_warehouses').on('click', function() {
+            var $button = $(this);
+            var $select = $('#caremil_pancake_warehouse_id');
+            var $loading = $('#warehouse_loading');
+            var currentValue = $select.val();
+            
+            // Disable button và hiển thị loading
+            $button.prop('disabled', true);
+            $loading.show();
+            
+            // Gọi AJAX để lấy danh sách kho mới
+            $.ajax({
+                url: ajaxurl,
+                method: 'POST',
+                data: {
+                    action: 'caremil_get_warehouses',
+                    nonce: '<?php echo wp_create_nonce('caremil_get_warehouses_nonce'); ?>'
+                },
+                success: function(response) {
+                    if (response.success && response.data) {
+                        // Xóa tất cả options trừ option đầu tiên
+                        $select.find('option:not(:first)').remove();
+                        
+                        // Thêm warehouses mới
+                        $.each(response.data, function(index, warehouse) {
+                            var selected = (warehouse.id === currentValue) ? 'selected' : '';
+                            $select.append('<option value="' + warehouse.id + '" ' + selected + '>' + warehouse.name + '</option>');
+                        });
+                        
+                        alert('Đã tải lại danh sách kho thành công!');
+                    } else {
+                        alert('Không thể tải danh sách kho. Vui lòng kiểm tra kết nối Pancake.');
+                    }
+                },
+                error: function() {
+                    alert('Có lỗi xảy ra khi tải danh sách kho.');
+                },
+                complete: function() {
+                    $button.prop('disabled', false);
+                    $loading.hide();
+                }
+            });
+        });
+    });
+    </script>
     <?php
 }
+
 
 // 3. Hiển thị danh sách khách hàng trong Admin
 function render_pancake_customers_page() {
@@ -3308,4 +3682,149 @@ function caremil_rest_get_payment_status( WP_REST_Request $request ) {
             'transaction' => isset( $data['transaction'] ) ? $data['transaction'] : null,
         )
     );
+}
+// Force product template loading
+require_once get_template_directory() . '/force-product-template.php';
+
+// Include product orders system
+require_once get_template_directory() . '/product-orders.php';
+
+/**
+ * Shipping Carrier Helper Functions
+ * Map partner_id to carrier information from Pancake POS API
+ */
+
+/**
+ * Get shipping carrier name by partner_id
+ * 
+ * @param int $partner_id Partner ID from Pancake API
+ * @return string Carrier name in Vietnamese
+ */
+function caremil_get_carrier_name( $partner_id ) {
+    $carriers = array(
+        0  => 'Snappy',
+        1  => 'Giao hàng tiết kiệm',
+        2  => 'EMS',
+        4  => '247 Express',
+        5  => 'Giao hàng nhanh',
+        7  => 'Viettel Post (VTP)',
+        8  => 'SPL',
+        9  => 'DHL',
+        10 => 'J&T Philippines',
+        11 => 'Ahamove',
+        12 => 'LBC',
+        13 => 'Lazada Express',
+        15 => 'J&T Express',
+        16 => 'Best Inc',
+        17 => 'VN Post',
+        19 => 'Ninja Van',
+        32 => 'SuperShip',
+        33 => 'ZTO Express',
+        36 => 'NTX',
+        37 => 'Grab Express',
+        38 => 'Vạn Phúc',
+        39 => 'Hola Ship',
+        40 => 'LWE Express',
+        41 => 'Flash Express',
+    );
+    
+    return isset( $carriers[ (int) $partner_id ] ) ? $carriers[ (int) $partner_id ] : 'Đơn vị vận chuyển';
+}
+
+/**
+ * Get carrier short code for CSS/icon purposes
+ * 
+ * @param int $partner_id Partner ID from Pancake API
+ * @return string Carrier short code
+ */
+function caremil_get_carrier_code( $partner_id ) {
+    $codes = array(
+        0  => 'snappy',
+        1  => 'ghtk',
+        2  => 'ems',
+        4  => '247express',
+        5  => 'ghn',
+        7  => 'vtp',
+        8  => 'spl',
+        9  => 'dhl',
+        10 => 'jnt-ph',
+        11 => 'ahamove',
+        12 => 'lbc',
+        13 => 'lazada',
+        15 => 'jnt',
+        16 => 'best',
+        17 => 'vnpost',
+        19 => 'ninjavan',
+        32 => 'supership',
+        33 => 'zto',
+        36 => 'ntx',
+        37 => 'grab',
+        38 => 'vanphuc',
+        39 => 'holaship',
+        40 => 'lwe',
+        41 => 'flash',
+    );
+    
+    return isset( $codes[ (int) $partner_id ] ) ? $codes[ (int) $partner_id ] : 'default';
+}
+
+/**
+ * Get carrier tracking URL
+ * 
+ * @param int    $partner_id   Partner ID from Pancake API
+ * @param string $tracking_code Tracking/extend code
+ * @return string|null Tracking URL or null if not available
+ */
+function caremil_get_carrier_tracking_url( $partner_id, $tracking_code ) {
+    if ( empty( $tracking_code ) ) {
+        return null;
+    }
+    
+    $tracking_urls = array(
+        1  => 'https://giaohangtietkiem.vn/khach-hang/tra-cuu-don-hang?code=' . urlencode( $tracking_code ),
+        5  => 'https://donhang.ghn.vn/?order_code=' . urlencode( $tracking_code ),
+        9  => 'https://www.dhl.com/vn-en/home/tracking/tracking-express.html?submit=1&tracking-id=' . urlencode( $tracking_code ),
+        15 => 'https://www.jtexpress.vn/tracking?billcode=' . urlencode( $tracking_code ),
+        17 => 'https://www.vnpost.vn/vi-vn/dinh-vi/buu-pham?key=' . urlencode( $tracking_code ),
+        19 => 'https://www.ninjavan.co/vi-vn/tracking?id=' . urlencode( $tracking_code ),
+    );
+    
+    return isset( $tracking_urls[ (int) $partner_id ] ) ? $tracking_urls[ (int) $partner_id ] : null;
+}
+
+/**
+ * Get carrier icon/emoji
+ * 
+ * @param int $partner_id Partner ID from Pancake API
+ * @return string Icon emoji or default truck icon
+ */
+function caremil_get_carrier_icon( $partner_id ) {
+    $icons = array(
+        0  => '🚚', // Snappy
+        1  => '📦', // GHTK
+        2  => '✉️', // EMS
+        4  => '⚡', // 247 Express
+        5  => '🚀', // GHN
+        7  => '📮', // VTP
+        8  => '📦', // SPL
+        9  => '✈️', // DHL
+        10 => '📦', // J&T PH
+        11 => '🛵', // Ahamove
+        12 => '📦', // LBC
+        13 => '🛍️', // Lazada
+        15 => '📦', // J&T
+        16 => '📦', // Best Inc
+        17 => '📮', // VN Post
+        19 => '🥷', // Ninja Van
+        32 => '⚡', // SuperShip
+        33 => '📦', // ZTO
+        36 => '📦', // NTX
+        37 => '🚗', // Grab
+        38 => '📦', // Vạn Phúc
+        39 => '📦', // Hola Ship
+        40 => '📦', // LWE
+        41 => '⚡', // Flash
+    );
+    
+    return isset( $icons[ (int) $partner_id ] ) ? $icons[ (int) $partner_id ] : '🚚';
 }

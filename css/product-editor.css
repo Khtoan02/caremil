@@ -1,0 +1,309 @@
+/**
+ * Premium Product Editor Styles
+ * Custom CSS for beautiful product editing experience
+ */
+
+/* Override WordPress admin styles for cleaner look */
+.caremil-product-editor {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Smooth transitions for all interactive elements */
+.caremil-product-editor * {
+    transition: all 0.2s ease;
+}
+
+/* Custom button styles */
+.caremil-product-editor button {
+    cursor: pointer;
+}
+
+.caremil-product-editor button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Form inputs focus states */
+.caremil-product-editor input[type="text"],
+.caremil-product-editor textarea,
+.caremil-product-editor select {
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.caremil-product-editor input[type="text"]:focus,
+.caremil-product-editor textarea:focus,
+.caremil-product-editor select:focus {
+    outline: none;
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+}
+
+/* Image upload hover effect */
+.caremil-product-editor .image-upload-placeholder {
+    transition: all 0.3s ease;
+}
+
+.caremil-product-editor .image-upload-placeholder:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Save button gradient animation */
+@keyframes gradient-x {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.caremil-product-editor button.gradient-animated {
+    background-size: 200% auto;
+    animation: gradient-x 3s ease infinite;
+}
+
+/* Pancake data card glow effect */
+.pancake-data-card {
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+}
+
+/* Loading spinner */
+.caremil-product-editor .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f4f6;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Success message */
+.caremil-success-message {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Error message */
+.caremil-error-message {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Card hover effects */
+.caremil-product-editor .card-hover {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.caremil-product-editor .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scrollbar */
+.caremil-product-editor ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.caremil-product-editor ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.caremil-product-editor ::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.caremil-product-editor ::-webkit-scrollbar-thumb:hover {
+    background: #667eea;
+}
+
+/* Status badge animations */
+.status-badge {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+}
+
+/* Image gallery grid */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.gallery-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.gallery-item:hover {
+    transform: scale(1.05);
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .caremil-product-editor .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Fix for WordPress components */
+.components-base-control__label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.components-text-control__input,
+.components-textarea-control__input {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+}
+
+/* Tailwind utility extensions */
+.gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.shadow-premium {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Fix admin bar overlap */
+.caremil-product-editor {
+    margin-top: 32px;
+}
+
+@media screen and (max-width: 782px) {
+    .caremil-product-editor {
+        margin-top: 46px;
+    }
+}
+
+/* Beautiful focus rings */
+.focus-ring:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: #667eea;
+    ring-offset: 2px;
+}
+
+/* Smooth height transitions for collapsible elements */
+.collapsible {
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.collapsible.collapsed {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+/* Loading state overlay */
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Toast notifications */
+.toast {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    min-width: 300px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    animation: slideInRight 0.3s ease;
+    z-index: 10000;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Premium placeholder animations */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}

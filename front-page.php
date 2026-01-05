@@ -1,6 +1,7 @@
 <?php
 /**
- * The main template file - MODERN ECOMMERCE HOMEPAGE
+ * Front Page Template - MODERN ECOMMERCE HOMEPAGE
+ * This replaces the CareMIL landing page
  *
  * @package Dawnbridge
  */
@@ -14,7 +15,7 @@ get_header();
     
     <div class="container mx-auto px-6 lg:px-8 relative z-10">
         <div class="grid lg:grid-cols-2 gap-12 items-center">
-            <!-- Left: Content -->
+            <!--Left: Content -->
             <div class="space-y-6">
                 <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
                     <span class="w-2 h-2 bg-success-500 rounded-full animate-pulse"></span>
@@ -66,7 +67,7 @@ get_header();
                     <div class="absolute inset-0 bg-gradient-to-t from-primary-900/50 to-transparent"></div>
                 </div>
                 <!-- Floating badge -->
-                <div class="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-xl p-6 max-w-xs">
+                <div class="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-xl p-6 max-w-xs hidden lg:block">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-success-100 rounded-lg flex items-center justify-center">
                             <i class="fas fa-shield-alt text-success-600 text-xl"></i>

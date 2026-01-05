@@ -1,8 +1,8 @@
 <?php
 /**
- * The header template file
+ * The header template file - MODERN PROFESSIONAL DESIGN
  *
- * @package Caremil
+ * @package Dawnbridge
  */
 
 // Khởi động session để kiểm tra trạng thái đăng nhập
@@ -18,37 +18,66 @@ if (!session_id()) {
     <title><?php wp_title('|', true, 'right'); bloginfo('name'); ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        brand: {
-                            navy: '#1a4f8a',
-                            blue: '#4cc9f0',
-                            gold: '#ffd166',
-                            soft: '#e0fbfc',
-                            cream: '#fffdf2',
-                            pink: '#ef476f',
-                            green: '#4ade80'
-                        }
+                        // Modern Professional Color Palette
+                        primary: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        },
+                        accent: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        success: {
+                            500: '#10b981',
+                            600: '#059669',
+                        },
                     },
                     fontFamily: {
-                        sans: ['Quicksand', 'sans-serif'],
-                        display: ['Baloo 2', 'cursive'],
-                    }
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 15px rgba(0, 0, 0, 0.05)',
+                        'card': '0 1px 3px rgba(0, 0, 0, 0.05)',
+                    },
                 }
             }
         }
     </script>
     <style>
-        /* --- COPY TỪ ĐÂY VÀO FILE CSS CỦA BẠN --- */
-        
-        /* Đẩy nội dung xuống để không bị header che mất */
-        body { padding-top: 80px; } 
+        /* Modern Professional Styles */
+        body { 
+            padding-top: 72px;
+            font-family: 'Inter', sans-serif;
+        }
 
-        /* Hiệu ứng Menu Mobile */
+        /* Smooth nav transition */
+        nav {
+            transition: all 0.3s ease;
+        }
+
+        /* Mobile menu animation */
         #mobile-menu {
             transition: all 0.3s ease-in-out;
             max-height: 0;
@@ -56,14 +85,14 @@ if (!session_id()) {
             overflow: hidden;
         }
         #mobile-menu.open {
-            max-height: 400px;
+            max-height: 500px;
             opacity: 1;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        /* Active Link Style */
+        /* Nav link hover effect - Modern underline */
         .nav-link {
             position: relative;
+            transition: color 0.2s ease;
         }
         .nav-link::after {
             content: '';
@@ -71,20 +100,23 @@ if (!session_id()) {
             width: 0;
             height: 2px;
             bottom: -4px;
-            left: 0;
-            background-color: #ffd166;
-            transition: width 0.3s;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #3b82f6;
+            transition: width 0.3s ease;
         }
-        .nav-link:hover::after, .nav-link.active::after {
+        .nav-link:hover::after,
+        .nav-link.active::after {
             width: 100%;
         }
-        .footer-gradient-border {
-            background: linear-gradient(to right, #4cc9f0, #ef476f, #ffd166);
+        .nav-link.active {
+            color: #1e293b;
+            font-weight: 600;
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 text-gray-800">
 
-    <!-- === BẮT ĐẦU PHẦN HEADER === -->
+    <!-- === MODERN PROFESSIONAL HEADER === -->
     <?php get_template_part( 'template-parts/navbar' ); ?>
-    <!-- === KẾT THÚC PHẦN HEADER === -->
+    <!-- === END HEADER === -->

@@ -176,7 +176,7 @@
             wp.element.createElement('div', { className: 'flex items-center justify-between mb-4' },
                 wp.element.createElement('div', null,
                     wp.element.createElement('h1', { className: 'text-xl font-bold text-slate-800' }, form.id ? 'Sửa sản phẩm' : 'Thêm sản phẩm mới'),
-                    wp.element.createElement('p', { className: 'text-sm text-slate-500' }, 'Nhập thông tin sản phẩm CareMIL.')
+                    wp.element.createElement('p', { className: 'text-sm text-slate-500' }, 'Nhập thông tin Sản phẩm.')
                 ),
                 wp.element.createElement('div', { className: 'flex gap-2' },
                     wp.element.createElement('button', {

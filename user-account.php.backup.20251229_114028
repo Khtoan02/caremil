@@ -78,41 +78,6 @@ if (!function_exists('caremil_normalize_phone')) {
     }
 }
 
-/**
- * Map status name to Label
- */
-if (!function_exists('caremil_get_status_label')) {
-    function caremil_get_status_label($status_name) {
-        $status_name = strtolower($status_name ?? '');
-        $map = [
-            'new' => 'Mới',
-            'waiting_confirm' => 'Chờ xác nhận',
-            'confirmed' => 'Đã xác nhận',
-            'packing' => 'Đang đóng gói',
-            'sending' => 'Đang gửi hàng',
-            'shipping' => 'Đang vận chuyển',
-            'success' => 'Hoàn thành',
-            'completed' => 'Hoàn thành',
-            'return' => 'Đang hoàn',
-            'returning' => 'Đang hoàn',
-            'returned' => 'Đã hoàn',
-            'cancel' => 'Đã hủy',
-            'canceled' => 'Đã hủy',
-            'fail' => 'Thất bại'
-        ];
-        return $map[$status_name] ?? ucfirst($status_name);
-    }
-    
-    function caremil_get_status_class($status_name) {
-        $status_name = strtolower($status_name ?? '');
-        if (in_array($status_name, ['new', 'waiting_confirm', 'confirmed'])) return 'bg-blue-100 text-blue-700';
-        if (in_array($status_name, ['packing', 'sending', 'shipping'])) return 'bg-yellow-100 text-yellow-700';
-        if (in_array($status_name, ['success', 'completed'])) return 'bg-green-100 text-green-700';
-        if (in_array($status_name, ['cancel', 'canceled', 'fail', 'return', 'returning', 'returned'])) return 'bg-red-100 text-red-700';
-        return 'bg-gray-100 text-gray-700';
-    }
-}
-
 // Lấy thông tin khách & đơn hàng theo session
 $caremil_customer_id = isset($_SESSION['pancake_customer_id']) ? sanitize_text_field($_SESSION['pancake_customer_id']) : '';
 $caremil_phone       = isset($_SESSION['pancake_phone']) ? sanitize_text_field($_SESSION['pancake_phone']) : '';
@@ -122,7 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $caremil_customer_id && empty($_POS
     $new_name      = isset($_POST['caremil_name']) ? sanitize_text_field($_POST['caremil_name']) : '';
     $new_phone     = isset($_POST['caremil_phone']) ? sanitize_text_field($_POST['caremil_phone']) : '';
     $new_email     = isset($_POST['caremil_email']) ? sanitize_email($_POST['caremil_email']) : '';
-    $new_gender    = isset($_POST['caremil_gender']) ? sanitize_text_field($_POST['caremil_gender']) : '';
     $new_birthday  = isset($_POST['caremil_birthday']) ? sanitize_text_field($_POST['caremil_birthday']) : '';
 
     // Chuẩn bị payload theo kiểu Pancake
@@ -136,9 +100,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $caremil_customer_id && empty($_POS
     }
     if ($new_email) {
         $payload['customer']['emails'] = array($new_email);
-    }
-    if ($new_gender) {
-        $payload['customer']['gender'] = $new_gender;
     }
     if ($new_birthday) {
         // Gửi dạng yyyy-mm-dd
@@ -274,134 +235,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $caremil_customer_id && isset($_POS
     }
 }
 
-// --- LOGIC TÌM ĐƠN HÀNG (STRICT FILTERING) ---
-// Bước 1: Normalizer cho số điện thoại (đảm bảo so sánh chính xác)
-if (!function_exists('caremil_normalize_phone_strict')) {
-    function caremil_normalize_phone_strict($phone) {
-        $clean = preg_replace('/[^0-9]/', '', $phone ?? '');
-        // Bỏ prefix 84 hoặc +84
-        if (substr($clean, 0, 2) === '84') {
-            $clean = '0' . substr($clean, 2);
-        }
-        // Đảm bảo bắt đầu bằng 0
-        if (substr($clean, 0, 1) !== '0' && strlen($clean) >= 9) {
-            $clean = '0' . $clean;
-        }
-        return $clean;
-    }
-}
-
-// Initial Variables
-$caremil_customer    = array(); // Avoid undefined warning
-$caremil_found_match = false; 
-
-// Try load customer from session ID first
 if ($caremil_customer_id) {
-    $caremil_customer = caremil_pancake_request("/shops/" . caremil_get_pancake_shop_id() . "/customers/{$caremil_customer_id}");
-    if (isset($caremil_customer['success']) && !$caremil_customer['success']) $caremil_customer = array();
-}
-
-$current_user_phone_norm = caremil_normalize_phone_strict($caremil_phone);
-$caremil_orders_list = array();
-
-if ($current_user_phone_norm) {
-    // A. Tìm Đơn Hàng (Strict)
-    $api_res = caremil_pancake_request("/shops/" . caremil_get_pancake_shop_id() . "/orders", array('search' => $caremil_phone, 'page_size' => 50));
-    $raw_list = $api_res['data'] ?? $api_res;
-    
-    // B. Tìm Customer Profile (Strict) nếu chưa có
-    if (empty($caremil_customer) || empty($caremil_customer['id'])) {
-         $api_cus = caremil_pancake_request("/shops/" . caremil_get_pancake_shop_id() . "/customers", array('search' => $caremil_phone, 'page_size' => 5));
-         if (!empty($api_cus['data'])) {
-             foreach ($api_cus['data'] as $candidate) {
-                 $phones = array_merge($candidate['phone_numbers'] ?? [], [$candidate['phone_number'] ?? '']);
-                 foreach ($phones as $p) {
-                     if (caremil_normalize_phone_strict($p) === $current_user_phone_norm) {
-                         $caremil_customer = $candidate;
-                         $caremil_found_match = true;
-                         // Sync Session
-                         $_SESSION['pancake_customer_id'] = $candidate['id'];
-                         $caremil_customer_id = $candidate['id'];
-                         break 2;
-                     }
-                 }
-             }
-         }
+    if (empty($caremil_customer)) {
+        $caremil_customer = caremil_pancake_request("/shops/" . caremil_get_pancake_shop_id() . "/customers/{$caremil_customer_id}");
+    }
+    $caremil_orders   = caremil_pancake_request("/shops/" . caremil_get_pancake_shop_id() . "/customers/{$caremil_customer_id}/orders", array('limit' => 5));
+} elseif ($caremil_phone) {
+    // Fallback: tìm theo SĐT nếu chưa có ID
+    $caremil_customer = caremil_pancake_request("/shops/" . caremil_get_pancake_shop_id() . "/customers", array('search' => $caremil_phone, 'page_size' => 10));
+    $caremil_customer = is_array($caremil_customer) && isset($caremil_customer['data'][0]) ? $caremil_customer['data'][0] : $caremil_customer;
+    $cid = $caremil_customer['id'] ?? '';
+    if ($cid) {
+        // Đồng bộ lại customer_id theo đúng khách tìm được từ SĐT
+        $caremil_customer_id = (string) $cid;
+        $_SESSION['pancake_customer_id'] = $caremil_customer_id;
+        $caremil_orders = caremil_pancake_request("/shops/" . caremil_get_pancake_shop_id() . "/customers/{$caremil_customer_id}/orders", array('limit' => 5));
     } else {
-        // Nếu đã có customer từ ID, check xem có khớp phone không cho chắc
-        $phones = array_merge($caremil_customer['phone_numbers'] ?? [], [$caremil_customer['phone_number'] ?? '']);
+        $caremil_orders = array();
+    }
+} else {
+    $caremil_customer = array();
+    $caremil_orders   = array();
+}
+
+// Nếu thiếu email/dob hoặc sai phone, tìm kỹ theo SĐT để lấy đúng bản ghi
+$caremil_normalized_phone = caremil_normalize_phone($caremil_phone);
+$caremil_customer_search  = caremil_pancake_request("/shops/" . caremil_get_pancake_shop_id() . "/customers", array('search' => $caremil_phone, 'page_size' => 10));
+$caremil_found_match = false;
+if (is_array($caremil_customer_search) && isset($caremil_customer_search['data'])) {
+    foreach ($caremil_customer_search['data'] as $candidate) {
+        $phones = array();
+        if (!empty($candidate['phone_numbers']) && is_array($candidate['phone_numbers'])) {
+            $phones = array_merge($phones, $candidate['phone_numbers']);
+        }
+        if (!empty($candidate['phone_number'])) {
+            $phones[] = $candidate['phone_number'];
+        }
+        $match = false;
         foreach ($phones as $p) {
-             if (caremil_normalize_phone_strict($p) === $current_user_phone_norm) {
-                 $caremil_found_match = true;
-                 break;
-             }
-        }
-    }
-
-    if (is_array($raw_list)) {
-        foreach ($raw_list as $o) {
-            // Lấy SĐT từ các vị trí có thể có trong đơn hàng
-            $phones_to_check = array();
-            
-            // 1. Shipping Address Phone
-            if (!empty($o['shipping_address']['phone_number'])) $phones_to_check[] = $o['shipping_address']['phone_number'];
-            
-            // 2. Bill Phone
-            if (!empty($o['bill_phone_number'])) $phones_to_check[] = $o['bill_phone_number'];
-            
-            // 3. Customer Info inside Order
-            if (!empty($o['customer']['phone_number'])) $phones_to_check[] = $o['customer']['phone_number'];
-
-            $is_owner = false;
-            foreach ($phones_to_check as $p) {
-                if (caremil_normalize_phone_strict($p) === $current_user_phone_norm) {
-                    $is_owner = true;
-                    break;
-                }
-            }
-            
-            if ($is_owner) {
-                $caremil_orders_list[] = $o;
+            if (caremil_normalize_phone($p) === $caremil_normalized_phone) {
+                $match = true;
+                break;
             }
         }
-    }
-}
+        if ($match) {
+            // ưu tiên dữ liệu đầy đủ nhất, đảm bảo khớp đúng SĐT đăng nhập
+            $caremil_customer    = $candidate;
+            $caremil_found_match = true;
 
-// Nếu list rỗng và có customer_id, thử fallback tìm theo customer_id (nhưng vẫn phải filter lại phone)
-if (empty($caremil_orders_list) && $caremil_customer_id) {
-    $api_res_2 = caremil_pancake_request("/shops/" . caremil_get_pancake_shop_id() . "/orders", array('customer_id' => $caremil_customer_id, 'page_size' => 20));
-    $raw_list_2 = $api_res_2['data'] ?? $api_res_2;
-    if (is_array($raw_list_2)) {
-         foreach ($raw_list_2 as $o) {
-            $phones_to_check = array();
-            if (!empty($o['shipping_address']['phone_number'])) $phones_to_check[] = $o['shipping_address']['phone_number'];
-            if (!empty($o['bill_phone_number'])) $phones_to_check[] = $o['bill_phone_number'];
-            
-            $is_owner = false;
-            foreach ($phones_to_check as $p) {
-                if (caremil_normalize_phone_strict($p) === $current_user_phone_norm) {
-                    $is_owner = true;
-                    break;
-                }
+            // Đồng bộ lại customer_id đúng với khách khớp SĐT
+            if (!empty($candidate['id'])) {
+                $caremil_customer_id = (string) $candidate['id'];
+                $_SESSION['pancake_customer_id'] = $caremil_customer_id;
             }
-            // Add if not already present
-            if ($is_owner) {
-                $exists = false;
-                foreach ($caremil_orders_list as $existing) {
-                    if (($existing['id'] ?? '') == ($o['id'] ?? '')) {
-                        $exists = true; break;
+
+            // lấy thêm orders theo SĐT nếu chưa có
+            if (empty($caremil_orders)) {
+                $orders_by_phone = caremil_pancake_request("/shops/" . caremil_get_pancake_shop_id() . "/orders", array('search' => $caremil_phone, 'page_size' => 50));
+                if (is_array($orders_by_phone) && isset($orders_by_phone['data'])) {
+                    // lọc đúng sđt
+                    $filtered = array();
+                    foreach ($orders_by_phone['data'] as $o) {
+                        $bill_phone = caremil_normalize_phone($o['bill_phone_number'] ?? '');
+                        $ship_phone = caremil_normalize_phone($o['shipping_address']['phone_number'] ?? '');
+                        if ($bill_phone === $caremil_normalized_phone || $ship_phone === $caremil_normalized_phone) {
+                            $filtered[] = $o;
+                        }
                     }
+                    $caremil_orders = array('data' => $filtered);
                 }
-                if (!$exists) $caremil_orders_list[] = $o;
             }
-         }
+            break;
+        }
     }
 }
-
-
-// (Phần logic tìm customer cũ đã được merge vào flow ở trên hoặc không cần thiết nữa vì ta đã có customer từ session)
-// Tuy nhiên vẫn giữ logic lấy thông tin chi tiết customer nếu chưa có
-
 
 // Nếu không tìm được bản ghi nào khớp chính xác với SĐT đăng nhập
 // thì không dùng lại ID/dữ liệu cũ (tránh đổ nhầm sang khách khác – ví dụ 0329249536)
@@ -413,15 +320,11 @@ if ($caremil_phone && !$caremil_found_match) {
 }
 
 // Chuẩn hóa dữ liệu hiển thị
-// $caremil_orders_list đã được populate ở trên bằng logic strict filter
-// Sắp xếp đơn hàng mới nhất lên đầu (dựa vào created_at hoặc inserted_at)
-usort($caremil_orders_list, function($a, $b) {
-    $t1 = strtotime($a['created_at'] ?? ($a['inserted_at'] ?? 0));
-    $t2 = strtotime($b['created_at'] ?? ($b['inserted_at'] ?? 0));
-    return $t2 - $t1;
-});
-    // Old logic fallback
-
+$caremil_orders_list = array();
+if (is_array($caremil_orders)) {
+    // Một số API trả về dạng ['data' => [...]], fallback nếu không.
+    $caremil_orders_list = $caremil_orders['data'] ?? $caremil_orders;
+}
 
 // Lấy địa chỉ
 $caremil_addresses = array();
@@ -516,11 +419,6 @@ if ($caremil_birthday_raw) {
         $caremil_birthday = date('Y-m-d', $ts); // định dạng cho input type date
     }
 }
-
-$caremil_gender = '';
-if (!empty($caremil_customer['gender'])) {
-    $caremil_gender = $caremil_customer['gender'];
-}
 ?>
 <!DOCTYPE html>
 <html lang="vi" class="scroll-smooth">
@@ -530,25 +428,25 @@ if (!empty($caremil_customer['gender'])) {
     <title>Tài Khoản Của Tôi - CareMIL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         brand: {
-                            navy: '#0f172a',
-                            blue: '#3b82f6',
-                            gold: '#3b82f6',
+                            navy: '#1a4f8a',
+                            blue: '#4cc9f0',
+                            gold: '#ffd166',
                             soft: '#e0fbfc',
                             cream: '#fffdf2',
-                            pink: '#0f172a',
+                            pink: '#ef476f',
                             green: '#4ade80'
                         }
                     },
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Inter', 'cursive'],
+                        sans: ['Quicksand', 'sans-serif'],
+                        display: ['Baloo 2', 'cursive'],
                     },
                     boxShadow: {
                         'soft': '0 10px 40px -10px rgba(76, 201, 240, 0.2)',
@@ -566,11 +464,11 @@ if (!empty($caremil_customer['gender'])) {
         .nav-item { transition: all 0.3s ease; border-left: 4px solid transparent; }
         .nav-item.active {
             background-color: #f0f9ff;
-            color: #0f172a;
-            border-left-color: #3b82f6;
+            color: #1a4f8a;
+            border-left-color: #4cc9f0;
             font-weight: 700;
         }
-        .nav-item:hover:not(.active) { background-color: #f8fafc; color: #0f172a; }
+        .nav-item:hover:not(.active) { background-color: #f8fafc; color: #1a4f8a; }
         .nav-item i { width: 24px; text-align: center; }
 
         /* Content Transition */
@@ -608,11 +506,11 @@ if (!empty($caremil_customer['gender'])) {
                 <div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden sticky top-4"> <!-- Adjusted sticky top -->
                     <!-- User Info Block -->
                     <div class="p-6 border-b border-gray-100 flex items-center gap-4 bg-gradient-to-r from-blue-50 to-white">
-                        <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center border-2 border-gray-50 shadow-inner text-2xl text-primary-900">
+                        <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center border-2 border-brand-soft shadow-inner text-2xl text-brand-pink">
                             <i class="fas fa-heart"></i>
                         </div>
                         <div>
-                            <h3 class="font-sans font-bold text-primary-900 text-lg leading-tight">
+                            <h3 class="font-display font-bold text-brand-navy text-lg leading-tight">
                                 <?php echo esc_html($caremil_display_name ?: 'Khách hàng'); ?>
                             </h3>
                             <p class="text-xs text-gray-500 mt-1">
@@ -651,32 +549,32 @@ if (!empty($caremil_customer['gender'])) {
                 
                 <!-- 1. DASHBOARD TAB -->
                 <div id="panel-dashboard" class="tab-panel active">
-                    <h2 class="text-2xl font-sans font-bold text-primary-900 mb-6">Tổng Quan Tài Khoản</h2>
+                    <h2 class="text-2xl font-display font-bold text-brand-navy mb-6">Tổng Quan Tài Khoản</h2>
                     
                     <!-- Stats Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                         <div class="bg-white p-5 rounded-2xl shadow-card border border-gray-100 flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-blue-50 text-accent-600 flex items-center justify-center text-xl"><i class="fas fa-box-open"></i></div>
+                            <div class="w-12 h-12 rounded-full bg-blue-50 text-brand-blue flex items-center justify-center text-xl"><i class="fas fa-box-open"></i></div>
                             <div>
-                                <p class="text-2xl font-black text-primary-900">
+                                <p class="text-2xl font-black text-brand-navy">
                                     <?php echo esc_html($caremil_order_count); ?>
                                 </p>
                                 <p class="text-xs text-gray-500 font-bold uppercase">Đơn hàng đã mua</p>
                             </div>
                         </div>
                         <div class="bg-white p-5 rounded-2xl shadow-card border border-gray-100 flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-pink-50 text-primary-900 flex items-center justify-center text-xl"><i class="fas fa-wallet"></i></div>
+                            <div class="w-12 h-12 rounded-full bg-pink-50 text-brand-pink flex items-center justify-center text-xl"><i class="fas fa-wallet"></i></div>
                             <div>
-                                <p class="text-2xl font-black text-primary-900">
+                                <p class="text-2xl font-black text-brand-navy">
                                     <?php echo esc_html(caremil_format_currency($caremil_total_spent)); ?>
                                 </p>
                                 <p class="text-xs text-gray-500 font-bold uppercase">Tổng chi tiêu</p>
                             </div>
                         </div>
                         <div class="bg-white p-5 rounded-2xl shadow-card border border-gray-100 flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-yellow-50 text-accent-600 flex items-center justify-center text-xl"><i class="fas fa-coins"></i></div>
+                            <div class="w-12 h-12 rounded-full bg-yellow-50 text-brand-gold flex items-center justify-center text-xl"><i class="fas fa-coins"></i></div>
                             <div>
-                                <p class="text-2xl font-black text-primary-900">
+                                <p class="text-2xl font-black text-brand-navy">
                                     <?php echo esc_html($caremil_points); ?>
                                 </p>
                                 <p class="text-xs text-gray-500 font-bold uppercase">Xu tích lũy</p>
@@ -687,31 +585,20 @@ if (!empty($caremil_customer['gender'])) {
                     <!-- Recent Order -->
                     <div class="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold text-primary-900 text-lg">Đơn Hàng Gần Nhất</h3>
-                            <a href="#" onclick="switchTab('orders')" class="text-xs font-bold text-accent-600 hover:underline">Xem tất cả</a>
+                            <h3 class="font-bold text-brand-navy text-lg">Đơn Hàng Gần Nhất</h3>
+                            <a href="#" onclick="switchTab('orders')" class="text-xs font-bold text-brand-blue hover:underline">Xem tất cả</a>
                         </div>
                         <?php if ($caremil_latest_order): ?>
                             <?php
                                 $order_code   = $caremil_latest_order['code'] ?? ($caremil_latest_order['id'] ?? '');
-                                $order_status_raw = $caremil_latest_order['status_name'] ?? ($caremil_latest_order['status'] ?? '');
-                                $order_status = caremil_get_status_label($order_status_raw);
-                                $order_class  = caremil_get_status_class($order_status_raw);
-                                
-                                $order_total  = $caremil_latest_order['total_price'] ?? ($caremil_latest_order['total'] ?? 0);
+                                $order_status = $caremil_latest_order['status'] ?? '';
+                                $order_total  = $caremil_latest_order['total'] ?? 0;
                                 $order_items  = $caremil_latest_order['items'] ?? array();
-                                $order_date   = $caremil_latest_order['inserted_at'] ?? ($caremil_latest_order['created_at'] ?? '');
-                                
+                                $order_date   = $caremil_latest_order['created_at'] ?? '';
                                 $first_item   = is_array($order_items) && count($order_items) ? $order_items[0] : null;
-                                // Parse First Item Properly
-                                $product_name = $first_item['variation_info']['name'] ?? ($first_item['product_name'] ?? ($first_item['name'] ?? 'Sản phẩm'));
-                                $product_qty  = $first_item['quantity'] ?? 1;
-                                $product_img_src = '';
-                                if (!empty($first_item['variation_info']['images']) && is_array($first_item['variation_info']['images'])) {
-                                    $product_img_src = $first_item['variation_info']['images'][0];
-                                } elseif (!empty($first_item['image'])) {
-                                    $product_img_src = $first_item['image'];
-                                }
-                                $order_image  = $product_img_src ?: 'https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Care-Milk-tach-nen-chuan.png';
+                                $product_name = $first_item['name'] ?? 'Sản phẩm';
+                                $product_qty  = $first_item['quantity'] ?? '';
+                                $order_image  = $first_item['image'] ?? 'https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Care-Milk-tach-nen-chuan.png';
                             ?>
                         <div class="flex flex-col md:flex-row gap-4 items-center bg-gray-50 rounded-xl p-4 border border-gray-200">
                             <div class="w-16 h-16 bg-white rounded-lg p-1 border border-gray-200 flex-shrink-0">
@@ -719,9 +606,9 @@ if (!empty($caremil_customer['gender'])) {
                             </div>
                             <div class="flex-grow text-center md:text-left">
                                 <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mb-1">
-                                        <span class="font-bold text-primary-900 text-sm">#<?php echo esc_html($order_code); ?></span>
+                                        <span class="font-bold text-brand-navy text-sm">#<?php echo esc_html($order_code); ?></span>
                                         <?php if ($order_status): ?>
-                                            <span class="text-xs px-2 py-0.5 rounded font-bold <?php echo caremil_get_status_class($order_status_raw); ?>">
+                                            <span class="text-xs px-2 py-0.5 rounded font-bold bg-gray-100">
                                                 <?php echo esc_html($order_status); ?>
                                             </span>
                                         <?php endif; ?>
@@ -729,7 +616,7 @@ if (!empty($caremil_customer['gender'])) {
                                     <p class="text-xs text-gray-500">
                                         <?php
                                             $items_count = is_array($order_items) ? count($order_items) : 0;
-                                            echo esc_html($items_count . ' sản phẩm' . ($product_name ? ' - ' . $product_name : ''));
+                                            echo esc_html($items_count . ' sản phẩm - ' . ($product_name ?: ''));
                                         ?>
                                         <?php if ($order_date): ?>
                                             • Đặt ngày: <?php echo esc_html(date_i18n('d/m/Y', strtotime($order_date))); ?>
@@ -737,10 +624,10 @@ if (!empty($caremil_customer['gender'])) {
                                     </p>
                                 </div>
                                 <div class="text-right">
-                                    <p class="font-bold text-primary-900 text-lg"><?php echo esc_html(caremil_format_currency($order_total)); ?></p>
+                                    <p class="font-bold text-brand-pink text-lg"><?php echo esc_html(caremil_format_currency($order_total)); ?></p>
                                     <div class="flex gap-2 justify-end">
-                                        <button type="button" data-order-id="<?php echo esc_attr($caremil_latest_order['id'] ?? $order_code); ?>" class="js-order-detail mt-1 text-xs font-bold text-primary-900 border border-primary-900 px-3 py-1 rounded hover:bg-primary-900 hover:text-white transition">Chi tiết</button>
-                                        <button class="mt-1 text-xs font-bold text-primary-900 border border-primary-900 px-3 py-1 rounded hover:bg-primary-900 hover:text-white transition">Theo dõi</button>
+                                        <button type="button" data-order-id="<?php echo esc_attr($caremil_latest_order['id'] ?? $order_code); ?>" class="js-order-detail mt-1 text-xs font-bold text-brand-navy border border-brand-navy px-3 py-1 rounded hover:bg-brand-navy hover:text-white transition">Chi tiết</button>
+                                        <button class="mt-1 text-xs font-bold text-brand-navy border border-brand-navy px-3 py-1 rounded hover:bg-brand-navy hover:text-white transition">Theo dõi</button>
                                     </div>
                                 </div>
                             </div>
@@ -754,62 +641,51 @@ if (!empty($caremil_customer['gender'])) {
 
                 <!-- 2. ORDERS TAB -->
                 <div id="panel-orders" class="tab-panel">
-                    <h2 class="text-2xl font-sans font-bold text-primary-900 mb-6">Lịch Sử Đơn Hàng</h2>
+                    <h2 class="text-2xl font-display font-bold text-brand-navy mb-6">Lịch Sử Đơn Hàng</h2>
                     
                     <div class="space-y-4">
                         <?php if (!empty($caremil_orders_list)): ?>
                             <?php foreach ($caremil_orders_list as $order): ?>
                                 <?php
                                     $order_code   = $order['code'] ?? ($order['id'] ?? '');
-                                    $order_status_raw = $order['status_name'] ?? ($order['status'] ?? '');
-                                    $order_status = caremil_get_status_label($order_status_raw);
-                                    
-                                    $order_total  = $order['total_price'] ?? ($order['total'] ?? 0);
-                                    $order_date   = $order['inserted_at'] ?? ($order['created_at'] ?? '');
-                                    
+                                    $order_status = $order['status'] ?? '';
+                                    $order_total  = $order['total'] ?? 0;
+                                    $order_date   = $order['created_at'] ?? '';
                                     $order_items  = $order['items'] ?? array();
                                     $first_item   = is_array($order_items) && count($order_items) ? $order_items[0] : null;
-                                    
-                                    $product_name = $first_item['variation_info']['name'] ?? ($first_item['product_name'] ?? ($first_item['name'] ?? 'Sản phẩm'));
-                                    $product_qty  = $first_item['quantity'] ?? 1;
-                                    
-                                    $product_img_src = '';
-                                    if (!empty($first_item['variation_info']['images']) && is_array($first_item['variation_info']['images'])) {
-                                        $product_img_src = $first_item['variation_info']['images'][0];
-                                    } elseif (!empty($first_item['image'])) {
-                                        $product_img_src = $first_item['image'];
-                                    }
-                                    $product_image = $product_img_src ?: 'https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Care-Milk-tach-nen-chuan.png';
+                                    $product_name = $first_item['name'] ?? 'Sản phẩm';
+                                    $product_qty  = $first_item['quantity'] ?? '';
+                                    $product_image= $first_item['image'] ?? 'https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Care-Milk-tach-nen-chuan.png';
                                 ?>
                         <div class="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
                             <div class="bg-gray-50 px-6 py-3 border-b border-gray-100 flex justify-between items-center text-xs md:text-sm">
                                         <span class="font-bold text-gray-500">
-                                            Mã đơn: <span class="text-primary-900">#<?php echo esc_html($order_code); ?></span>
+                                            Mã đơn: <span class="text-brand-navy">#<?php echo esc_html($order_code); ?></span>
                                             <?php if ($order_date): ?>
                                                 • <?php echo esc_html(date_i18n('d/m/Y', strtotime($order_date))); ?>
                                             <?php endif; ?>
                                         </span>
                                         <?php if ($order_status): ?>
-                                            <span class="font-bold px-3 py-1 rounded-full <?php echo caremil_get_status_class($order_status_raw); ?>"><?php echo esc_html($order_status); ?></span>
+                                            <span class="font-bold px-3 py-1 rounded-full bg-gray-100 text-gray-700"><?php echo esc_html($order_status); ?></span>
                                         <?php endif; ?>
                             </div>
                             <div class="p-6">
                                 <div class="flex gap-4 items-start">
                                             <img src="<?php echo esc_url($product_image); ?>" class="w-20 h-20 object-contain border border-gray-100 rounded-lg p-1 bg-gray-50">
                                     <div class="flex-grow">
-                                                <h4 class="font-bold text-primary-900 text-sm md:text-base"><?php echo esc_html($product_name); ?></h4>
+                                                <h4 class="font-bold text-brand-navy text-sm md:text-base"><?php echo esc_html($product_name); ?></h4>
                                                 <p class="text-xs text-gray-500"><?php echo esc_html('x' . $product_qty); ?></p>
                                     </div>
                                     <div class="text-right">
-                                                <p class="font-bold text-primary-900"><?php echo esc_html(caremil_format_currency($order_total)); ?></p>
+                                                <p class="font-bold text-brand-pink"><?php echo esc_html(caremil_format_currency($order_total)); ?></p>
                                     </div>
                                 </div>
                                 <div class="flex justify-end gap-3 pt-4 mt-4 border-t border-dashed border-gray-200">
                                             <span class="text-sm font-bold text-gray-500 self-center mr-auto">
-                                                Tổng tiền: <span class="text-primary-900 text-lg"><?php echo esc_html(caremil_format_currency($order_total)); ?></span>
+                                                Tổng tiền: <span class="text-brand-navy text-lg"><?php echo esc_html(caremil_format_currency($order_total)); ?></span>
                                             </span>
                                             <button type="button" data-order-id="<?php echo esc_attr($order['id'] ?? $order_code); ?>" class="js-order-detail px-4 py-2 border border-gray-300 rounded-lg text-xs font-bold hover:bg-gray-50 text-gray-600 transition">Chi Tiết</button>
-                                    <button class="px-4 py-2 bg-primary-900 text-white rounded-lg text-xs font-bold hover:bg-accent-600 transition shadow-md">Mua Lại</button>
+                                    <button class="px-4 py-2 bg-brand-navy text-white rounded-lg text-xs font-bold hover:bg-brand-blue transition shadow-md">Mua Lại</button>
                                 </div>
                                     </div>
                                 </div>
@@ -825,8 +701,8 @@ if (!empty($caremil_customer['gender'])) {
                 <!-- 3. ADDRESS TAB -->
                 <div id="panel-address" class="tab-panel">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-sans font-bold text-primary-900">Sổ Địa Chỉ</h2>
-                        <button onclick="document.getElementById('caremil-addr-modal').classList.remove('hidden')" class="px-4 py-2 bg-accent-600 text-primary-900 rounded-lg text-sm font-bold hover:bg-yellow-400 shadow-md transition flex items-center gap-2">
+                        <h2 class="text-2xl font-display font-bold text-brand-navy">Sổ Địa Chỉ</h2>
+                        <button onclick="document.getElementById('caremil-addr-modal').classList.remove('hidden')" class="px-4 py-2 bg-brand-gold text-brand-navy rounded-lg text-sm font-bold hover:bg-yellow-400 shadow-md transition flex items-center gap-2">
                             <i class="fas fa-plus"></i> Thêm Mới
                         </button>
                     </div>
@@ -835,7 +711,7 @@ if (!empty($caremil_customer['gender'])) {
                     <div id="caremil-addr-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center px-4">
                         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
                             <div class="flex justify-between items-center px-6 py-4 border-b">
-                                <h3 class="text-lg font-bold text-primary-900" id="caremil-addr-modal-title">Thêm địa chỉ</h3>
+                                <h3 class="text-lg font-bold text-brand-navy" id="caremil-addr-modal-title">Thêm địa chỉ</h3>
                                 <button type="button" class="text-gray-500 text-xl" onclick="caremilAddrClose()">&times;</button>
                             </div>
                             <form method="POST" class="p-6 space-y-4">
@@ -844,11 +720,11 @@ if (!empty($caremil_customer['gender'])) {
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Họ tên</label>
-                                        <input type="text" name="caremil_addr_name" id="caremil_addr_name" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-accent-600 focus:outline-none" placeholder="Họ tên người nhận">
+                                        <input type="text" name="caremil_addr_name" id="caremil_addr_name" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-brand-blue focus:outline-none" placeholder="Họ tên người nhận">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Số điện thoại</label>
-                                        <input type="text" name="caremil_addr_phone" id="caremil_addr_phone" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-accent-600 focus:outline-none" placeholder="SĐT người nhận">
+                                        <input type="text" name="caremil_addr_phone" id="caremil_addr_phone" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-brand-blue focus:outline-none" placeholder="SĐT người nhận">
                                     </div>
                                 </div>
                                 <div class="space-y-4">
@@ -856,13 +732,13 @@ if (!empty($caremil_customer['gender'])) {
                                         <div class="relative">
                                             <label class="block text-xs font-bold text-gray-500 mb-1 uppercase flex items-center justify-between">
                                                 <span>Tỉnh/Thành</span>
-                                                <span class="text-[11px] font-normal text-accent-600">Gõ tên để gợi ý</span>
+                                                <span class="text-[11px] font-normal text-brand-blue">Gõ tên để gợi ý</span>
                                             </label>
                                             <input type="hidden" name="caremil_addr_province_id" id="caremil_addr_province_id">
                                             <input 
                                                 type="text" 
                                                 id="caremil_addr_province_search" 
-                                                class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-accent-600 focus:outline-none text-sm" 
+                                                class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-brand-blue focus:outline-none text-sm" 
                                                 placeholder="Ví dụ: Hồ Chí Minh, Hà Nội..."
                                                 autocomplete="off"
                                             >
@@ -871,14 +747,14 @@ if (!empty($caremil_customer['gender'])) {
                                         <div class="relative">
                                             <label class="block text-xs font-bold text-gray-500 mb-1 uppercase flex items-center justify-between">
                                                 <span>Phường/Xã</span>
-                                                <span class="text-[11px] font-normal text-accent-600">Gõ tên để gợi ý</span>
+                                                <span class="text-[11px] font-normal text-brand-blue">Gõ tên để gợi ý</span>
                                             </label>
                                             <input type="hidden" name="caremil_addr_district_id" id="caremil_addr_district_id">
                                             <input type="hidden" name="caremil_addr_commune_id" id="caremil_addr_commune_id">
                                             <input 
                                                 type="text" 
                                                 id="caremil_addr_commune_search" 
-                                                class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-accent-600 focus:outline-none text-sm" 
+                                                class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-brand-blue focus:outline-none text-sm" 
                                                 placeholder="Ví dụ: Phường 1, Xã Bình An..."
                                                 autocomplete="off"
                                             >
@@ -887,13 +763,13 @@ if (!empty($caremil_customer['gender'])) {
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Địa chỉ đầy đủ</label>
-                                        <input type="text" name="caremil_addr_full" id="caremil_addr_full" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-accent-600 focus:outline-none text-sm" placeholder="Số nhà, tên đường (hệ thống sẽ tự thêm phường/xã, tỉnh/thành)">
+                                        <input type="text" name="caremil_addr_full" id="caremil_addr_full" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-brand-blue focus:outline-none text-sm" placeholder="Số nhà, tên đường (hệ thống sẽ tự thêm phường/xã, tỉnh/thành)">
                                         <p class="mt-1 text-[11px] text-gray-400">Ví dụ: 25 Nguyễn Huệ. Hệ thống sẽ ghép với phường/xã và tỉnh/thành để tạo địa chỉ hoàn chỉnh.</p>
                                     </div>
                                 </div>
                                 <div class="flex gap-3 justify-end">
                                     <button type="button" onclick="caremilAddrClose()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition">Hủy</button>
-                                    <button type="submit" class="bg-primary-900 text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-accent-600 transition"><i class="fas fa-save mr-2"></i><span id="caremil_addr_submit_label">Lưu địa chỉ</span></button>
+                                    <button type="submit" class="bg-brand-navy text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-brand-blue transition"><i class="fas fa-save mr-2"></i><span id="caremil_addr_submit_label">Lưu địa chỉ</span></button>
                                 </div>
                             </form>
                         </div>
@@ -905,122 +781,79 @@ if (!empty($caremil_customer['gender'])) {
 
                 <!-- 4. VOUCHERS TAB -->
                 <div id="panel-vouchers" class="tab-panel">
-                    <h2 class="text-2xl font-sans font-bold text-primary-900 mb-6">Kho Ưu Đãi</h2>
+                    <h2 class="text-2xl font-display font-bold text-brand-navy mb-6">Kho Ưu Đãi</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <?php
-                        $coupons = caremil_get_available_coupons();
-                        if (empty($coupons)) :
-                        ?>
-                            <div class="col-span-2 text-center py-8 text-gray-500">
-                                <i class="fas fa-ticket-alt text-4xl mb-3 opacity-30"></i>
-                                <p>Hiện chưa có mã giảm giá nào.</p>
-                            </div>
-                        <?php else : 
-                            foreach ($coupons as $coupon) :
-                                $code = $coupon->post_title;
-                                $type = get_post_meta($coupon->ID, '_coupon_type', true);
-                                $amount = get_post_meta($coupon->ID, '_coupon_amount', true);
-                                $min_order = get_post_meta($coupon->ID, '_coupon_min_order', true);
-                                $expiry = get_post_meta($coupon->ID, '_coupon_expiry', true);
-                                $desc = get_post_meta($coupon->ID, '_coupon_description', true);
-                                
-                                // Convert to number first
-                                $amount_num = floatval($amount);
-                                
-                                // Set display based on type
-                                if ($type === 'freeship') {
-                                    $amount_display = 'FREE';
-                                } elseif ($type === 'percent') {
-                                    $amount_display = $amount_num . '%';
-                                } else {
-                                    $amount_display = number_format($amount_num/1000) . 'k';
-                                }
-                                
-                                $color_class = 'bg-success-600 group-hover:bg-green-500'; // Default green
-                                $text_color = 'text-green-600';
-                                $bg_light = 'bg-green-50';
-                                $btn_bg = 'bg-success-600 hover:bg-green-600';
-                                
-                                if ($type === 'percent') {
-                                    $color_class = 'bg-accent-600 group-hover:bg-blue-500';
-                                    $text_color = 'text-accent-600';
-                                    $bg_light = 'bg-blue-50';
-                                    $btn_bg = 'bg-accent-600 hover:bg-blue-600';
-                                } elseif ($type === 'freeship') {
-                                    $color_class = 'bg-purple-600 group-hover:bg-purple-500';
-                                    $text_color = 'text-purple-600';
-                                    $bg_light = 'bg-purple-50';
-                                    $btn_bg = 'bg-purple-600 hover:bg-purple-600';
-                                }
-                        ?>
-                        <!-- Voucher Item -->
+                        <!-- Voucher 1 -->
                         <div class="bg-white rounded-xl shadow-sm flex overflow-hidden border border-gray-100 voucher-card hover:-translate-y-1 transition duration-300 group">
-                            <div class="<?php echo $color_class; ?> w-28 flex flex-col items-center justify-center text-white p-2 text-center transition">
-                                <span class="font-black text-2xl"><?php echo esc_html($amount_display); ?></span>
-                                <span class="text-[10px] uppercase font-bold tracking-widest"><?php echo ($type === 'freeship') ? 'SHIP' : 'OFF'; ?></span>
+                            <div class="bg-brand-blue w-28 flex flex-col items-center justify-center text-white p-2 text-center group-hover:bg-blue-500 transition">
+                                <span class="font-black text-2xl">10%</span>
+                                <span class="text-[10px] uppercase font-bold tracking-widest">OFF</span>
                             </div>
                             <div class="p-4 flex-grow flex flex-col justify-center">
-                                <p class="font-bold text-primary-900 text-sm line-clamp-2"><?php echo esc_html($desc ? $desc : $code); ?></p>
-                                <p class="text-xs text-gray-400 mt-1 mb-3">HSD: <?php echo $expiry ? date('d/m/Y', strtotime($expiry)) : 'Vô thời hạn'; ?></p>
+                                <p class="font-bold text-brand-navy text-sm">Giảm 10% đơn từ 500k</p>
+                                <p class="text-xs text-gray-400 mt-1 mb-3">HSD: 30/12/2024</p>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-[10px] <?php echo $bg_light . ' ' . $text_color; ?> px-2 py-0.5 rounded border border-opacity-20 font-mono">Mã: <?php echo esc_html($code); ?></span>
-                                    <button onclick="navigator.clipboard.writeText('<?php echo esc_js($code); ?>').then(()=>alert('Đã sao chép mã!'))" class="text-xs font-bold text-white <?php echo $btn_bg; ?> px-3 py-1.5 rounded-lg transition shadow-sm">Sao chép</button>
+                                    <span class="text-[10px] bg-blue-50 text-brand-blue px-2 py-0.5 rounded border border-blue-100">Mã: CARE10</span>
+                                    <button class="text-xs font-bold text-white bg-brand-blue px-3 py-1.5 rounded-lg hover:bg-blue-600 transition shadow-sm">Dùng ngay</button>
                                 </div>
                             </div>
                         </div>
-                        <?php endforeach; endif; ?>
+
+                        <!-- Voucher 2 -->
+                        <div class="bg-white rounded-xl shadow-sm flex overflow-hidden border border-gray-100 voucher-card hover:-translate-y-1 transition duration-300 group">
+                            <div class="bg-brand-green w-28 flex flex-col items-center justify-center text-white p-2 text-center group-hover:bg-green-500 transition">
+                                <i class="fas fa-truck text-2xl mb-1"></i>
+                                <span class="text-[10px] uppercase font-bold tracking-widest">FREESHIP</span>
+                            </div>
+                            <div class="p-4 flex-grow flex flex-col justify-center">
+                                <p class="font-bold text-brand-navy text-sm">Miễn phí vận chuyển</p>
+                                <p class="text-xs text-gray-400 mt-1 mb-3">HSD: 15/06/2024</p>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded border border-green-100">Mã: FREESHIP</span>
+                                    <button class="text-xs font-bold text-white bg-brand-green px-3 py-1.5 rounded-lg hover:bg-green-600 transition shadow-sm">Dùng ngay</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- 5. PROFILE TAB -->
                 <div id="panel-profile" class="tab-panel">
-                    <h2 class="text-2xl font-sans font-bold text-primary-900 mb-6">Thông Tin Cá Nhân</h2>
-                    <div class="bg-white rounded-xl shadow-card p-6 md:p-8 border border-gray-100">
+                    <h2 class="text-2xl font-display font-bold text-brand-navy mb-6">Thông Tin Cá Nhân</h2>
+                    <div class="bg-white rounded-3xl shadow-card p-6 md:p-8 border border-gray-100">
                         <form method="POST">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Họ và tên</label>
                                     <div class="relative">
                                         <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                        <input type="text" name="caremil_name" value="<?php echo esc_attr($caremil_display_name); ?>" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-accent-600 focus:bg-white transition font-bold text-primary-900">
+                                        <input type="text" name="caremil_name" value="<?php echo esc_attr($caremil_display_name); ?>" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-brand-blue focus:bg-white transition font-bold text-brand-navy">
                                     </div>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Số điện thoại</label>
                                     <div class="relative">
                                         <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                        <input type="tel" name="caremil_phone" value="<?php echo esc_attr($caremil_display_phone); ?>" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-accent-600 focus:bg-white transition font-bold text-primary-900">
+                                        <input type="tel" name="caremil_phone" value="<?php echo esc_attr($caremil_display_phone); ?>" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-brand-blue focus:bg-white transition font-bold text-brand-navy">
                                     </div>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Email</label>
                                     <div class="relative">
                                         <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                        <input type="email" name="caremil_email" value="<?php echo esc_attr($caremil_email); ?>" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-accent-600 focus:bg-white transition font-bold text-primary-900">
+                                        <input type="email" name="caremil_email" value="<?php echo esc_attr($caremil_email); ?>" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-brand-blue focus:bg-white transition font-bold text-brand-navy">
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Ngày sinh <span class="text-[10px] text-accent-600 normal-case">(Nhận quà sinh nhật)</span></label>
+                                    <label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Ngày sinh <span class="text-[10px] text-brand-blue normal-case">(Nhận quà sinh nhật)</span></label>
                                     <div class="relative">
                                         <i class="fas fa-birthday-cake absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                        <input type="date" name="caremil_birthday" value="<?php echo esc_attr($caremil_birthday); ?>" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-accent-600 focus:bg-white transition font-bold text-primary-900 text-sm">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 mb-2 uppercase">Giới tính</label>
-                                    <div class="relative">
-                                        <i class="fas fa-venus-mars absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                        <select name="caremil_gender" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-accent-600 focus:bg-white transition font-bold text-primary-900 appearance-none">
-                                            <option value="">-- Chọn giới tính --</option>
-                                            <option value="male" <?php selected($caremil_gender, 'male'); ?>>Nam</option>
-                                            <option value="female" <?php selected($caremil_gender, 'female'); ?>>Nữ</option>
-                                            <option value="other" <?php selected($caremil_gender, 'other'); ?>>Khác</option>
-                                        </select>
+                                        <input type="date" name="caremil_birthday" value="<?php echo esc_attr($caremil_birthday); ?>" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-brand-blue focus:bg-white transition font-bold text-brand-navy text-sm">
                                     </div>
                                 </div>
                                 
                                 <div class="md:col-span-2 pt-4 flex justify-end">
-                                    <button type="submit" class="bg-primary-900 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-accent-600 transition transform hover:-translate-y-1 flex items-center gap-2">
+                                    <button type="submit" class="bg-brand-navy text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-brand-blue transition transform hover:-translate-y-1 flex items-center gap-2">
                                         <i class="fas fa-save"></i> Lưu Thay Đổi
                                     </button>
                                 </div>
@@ -1039,48 +872,30 @@ if (!empty($caremil_customer['gender'])) {
             <div class="flex justify-between items-center px-6 py-4 border-b">
                 <div>
                     <p class="text-xs uppercase text-gray-500 font-bold">Chi tiết đơn hàng</p>
-                    <h3 class="text-lg font-bold text-primary-900" id="odm-code">#--</h3>
+                    <h3 class="text-lg font-bold text-brand-navy" id="odm-code">#--</h3>
                 </div>
-                <button type="button" id="odm-close" class="text-gray-500 hover:text-primary-900 text-xl">&times;</button>
+                <button type="button" id="odm-close" class="text-gray-500 hover:text-brand-navy text-xl">&times;</button>
             </div>
             <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
                         <p class="text-xs font-bold text-gray-500 uppercase">Trạng thái</p>
-                        <p class="font-bold text-primary-900" id="odm-status">--</p>
+                        <p class="font-bold text-brand-navy" id="odm-status">--</p>
                     </div>
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
                         <p class="text-xs font-bold text-gray-500 uppercase">Ngày đặt</p>
-                        <p class="font-bold text-primary-900" id="odm-date">--</p>
+                        <p class="font-bold text-brand-navy" id="odm-date">--</p>
                     </div>
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 md:col-span-2">
                         <p class="text-xs font-bold text-gray-500 uppercase">Địa chỉ giao</p>
-                        <p class="font-bold text-primary-900" id="odm-shipping">--</p>
-                    </div>
-                    <!-- Shipping Carrier Info in Modal -->
-                    <div id="odm-carrier-section" class="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-xl border border-brand-blue/20 md:col-span-2 hidden">
-                        <p class="text-xs font-bold text-gray-700 uppercase mb-2">Đơn vị vận chuyển</p>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span id="odm-carrier-icon" class="text-2xl">🚚</span>
-                                <span id="odm-carrier-name" class="font-bold text-primary-900 text-sm">--</span>
-                            </div>
-                            <span id="odm-carrier-fee" class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">--</span>
-                        </div>
-                        <div id="odm-tracking-section"  class="mt-2 hidden">
-                            <a id="odm-tracking-link" href="#" target="_blank" rel="noopener" class="flex items-center gap-2 text-xs text-brand-blue hover:text-brand-navy transition group">
-                                <i class="fas fa-barcode"></i>
-                                <span id="odm-tracking-code" class="font-mono font-semibold">--</span>
-                                <i class="fas fa-external-link-alt text-xs opacity-0 group-hover:opacity-100 transition"></i>
-                            </a>
-                        </div>
+                        <p class="font-bold text-brand-navy" id="odm-shipping">--</p>
                     </div>
                 </div>
 
                 <div class="border rounded-xl">
                     <div class="flex justify-between items-center px-4 py-3 border-b bg-gray-50">
-                        <p class="text-sm font-bold text-primary-900">Sản phẩm</p>
-                        <p class="text-sm font-bold text-primary-900">Thành tiền</p>
+                        <p class="text-sm font-bold text-brand-navy">Sản phẩm</p>
+                        <p class="text-sm font-bold text-brand-navy">Thành tiền</p>
                     </div>
                     <div id="odm-items" class="divide-y">
                         <div class="px-4 py-3 text-sm text-gray-500">Đang tải...</div>
@@ -1090,24 +905,24 @@ if (!empty($caremil_customer['gender'])) {
                 <div class="space-y-2 text-sm text-gray-600">
                     <div class="flex justify-between">
                         <span>Tổng tạm tính</span>
-                        <span id="odm-subtotal" class="font-bold text-primary-900">--</span>
+                        <span id="odm-subtotal" class="font-bold text-brand-navy">--</span>
                     </div>
                     <div class="flex justify-between">
                         <span>Phí vận chuyển</span>
-                        <span id="odm-shipping-fee" class="font-bold text-primary-900">--</span>
+                        <span id="odm-shipping-fee" class="font-bold text-brand-navy">--</span>
                     </div>
                     <div class="flex justify-between">
                         <span>Giảm giá</span>
-                        <span id="odm-discount" class="font-bold text-primary-900">--</span>
+                        <span id="odm-discount" class="font-bold text-brand-navy">--</span>
                     </div>
-                    <div class="flex justify-between text-lg font-bold text-primary-900 pt-2 border-t">
+                    <div class="flex justify-between text-lg font-bold text-brand-navy pt-2 border-t">
                         <span>Tổng thanh toán</span>
-                        <span id="odm-total" class="text-primary-900">--</span>
+                        <span id="odm-total" class="text-brand-pink">--</span>
                     </div>
                 </div>
             </div>
             <div class="px-6 py-4 border-t bg-gray-50 flex justify-end">
-                <button type="button" id="odm-close-btn" class="px-4 py-2 text-sm font-bold text-primary-900 border border-primary-900 rounded-lg hover:bg-primary-900 hover:text-white transition">Đóng</button>
+                <button type="button" id="odm-close-btn" class="px-4 py-2 text-sm font-bold text-brand-navy border border-brand-navy rounded-lg hover:bg-brand-navy hover:text-white transition">Đóng</button>
             </div>
         </div>
     </div>
@@ -1161,108 +976,26 @@ if (!empty($caremil_customer['gender'])) {
                 itemsWrap.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500 italic">Không có sản phẩm</div>';
             } else {
                 items.forEach(item => {
-                    // Try to get name/price from variation_info first (Pancake structure)
-                    const vInfo = item.variation_info || {};
-                    const name = vInfo.name || item.product_name || item.name || 'Sản phẩm';
+                    const name = item.variation_info?.name || item.product_name || item.name || 'Sản phẩm';
                     const qty  = item.quantity || 1;
-                    const price= vInfo.retail_price || item.retail_price || item.price || 0;
+                    const price= item.retail_price || item.price || 0;
                     const line = price * qty;
-                    
-                    let img = '';
-                    if (vInfo.images && Array.isArray(vInfo.images) && vInfo.images.length > 0) {
-                        img = vInfo.images[0];
-                    } else if (item.image) {
-                        img = item.image;
-                    }
-                    
+                    const img  = item.image || '';
                     itemsWrap.innerHTML += `
                         <div class="px-4 py-3 flex items-start gap-3">
-                            <img src="${img || 'https://caremil.dawnbridge.vn/wp-content/uploads/2025/12/Care-Milk-tach-nen-chuan.png'}" class="w-12 h-12 rounded border object-contain bg-white">
+                            ${img ? `<img src="${img}" class="w-12 h-12 rounded border object-contain bg-white">` : ''}
                             <div class="flex-1">
-                                <p class="font-bold text-sm text-primary-900">${name}</p>
+                                <p class="font-bold text-sm text-brand-navy">${name}</p>
                                 <p class="text-xs text-gray-500">SL: ${qty} x ${formatVnd(price)}</p>
                             </div>
-                            <div class="font-bold text-primary-900">${formatVnd(line)}</div>
+                            <div class="font-bold text-brand-navy">${formatVnd(line)}</div>
                         </div>
                     `;
                 });
             }
 
-            // Carrier Information
-            const partner = order.partner || {};
-            const partnerId = partner.partner_id;
-            const trackingCode = partner.extend_code || '';
-            const partnerFee = partner.total_fee || 0;
-            
-            // Carrier mapping (from PHP helper functions)
-            const carrierNames = {
-                0: 'Snappy', 1: 'Giao hàng tiết kiệm', 2: 'EMS', 4: '247 Express',
-                5: 'Giao hàng nhanh', 7: 'Viettel Post (VTP)', 8: 'SPL', 9: 'DHL',
-                10: 'J&T Philippines', 11: 'Ahamove', 12: 'LBC', 13: 'Lazada Express',
-                15: 'J&T Express', 16: 'Best Inc', 17: 'VN Post', 19: 'Ninja Van',
-                32: 'SuperShip', 33: 'ZTO Express', 36: 'NTX', 37: 'Grab Express',
-                38: 'Vạn Phúc', 39: 'Hola Ship', 40: 'LWE Express', 41: 'Flash Express'
-            };
-            
-            const carrierIcons = {
-                0: '🚚', 1: '📦', 2: '✉️', 4: '⚡', 5: '🚀', 7: '📮', 8: '📦', 9: '✈️',
-                10: '📦', 11: '🛵', 12: '📦', 13: '🛍️', 15: '📦', 16: '📦', 17: '📮',
-                19: '🥷', 32: '⚡', 33: '📦', 36: '📦', 37: '🚗', 38: '📦', 39: '📦',
-                40: '📦', 41: '⚡'
-            };
-            
-            const trackingUrls = {
-                1: (code) => `https://giaohangtietkiem.vn/khach-hang/tra-cuu-don-hang?code=${encodeURIComponent(code)}`,
-                5: (code) => `https://donhang.ghn.vn/?order_code=${encodeURIComponent(code)}`,
-                9: (code) => `https://www.dhl.com/vn-en/home/tracking/tracking-express.html?submit=1&tracking-id=${encodeURIComponent(code)}`,
-                15: (code) => `https://www.jtexpress.vn/tracking?billcode=${encodeURIComponent(code)}`,
-                17: (code) => `https://www.vnpost.vn/vi-vn/dinh-vi/buu-pham?key=${encodeURIComponent(code)}`,
-                19: (code) => `https://www.ninjavan.co/vi-vn/tracking?id=${encodeURIComponent(code)}`
-            };
-            
-            const carrierSection = document.getElementById('odm-carrier-section');
-            const shipFee = order.shipping_fee || 0;
-            
-            if (partnerId !== null && partnerId !== undefined && shipFee > 0) {
-                const carrierName = carrierNames[partnerId] || 'Đơn vị vận chuyển';
-                const carrierIcon = carrierIcons[partnerId] || '🚚';
-                
-                document.getElementById('odm-carrier-icon').innerText = carrierIcon;
-                document.getElementById('odm-carrier-name').innerText = carrierName;
-                document.getElementById('odm-carrier-fee').innerText = formatVnd(shipFee);
-                
-                // Tracking info
-                const trackingSection = document.getElementById('odm-tracking-section');
-                if (trackingCode && trackingCode.trim()) {
-                    const trackingLink = document.getElementById('odm-tracking-link');
-                    const trackingCodeEl = document.getElementById('odm-tracking-code');
-                    
-                    trackingCodeEl.innerText = trackingCode;
-                    
-                    if (trackingUrls[partnerId]) {
-                        trackingLink.href = trackingUrls[partnerId](trackingCode);
-                        trackingLink.style.pointerEvents = 'auto';
-                        trackingLink.classList.remove('cursor-default');
-                    } else {
-                        trackingLink.href = '#';
-                        trackingLink.style.pointerEvents = 'none';
-                        trackingLink.classList.add('cursor-default');
-                    }
-                    
-                    trackingSection.classList.remove('hidden');
-                } else {
-                    trackingSection.classList.add('hidden');
-                }
-                
-                carrierSection.classList.remove('hidden');
-            } else {
-                carrierSection.classList.add('hidden');
-            }
-
-            const subtotal = items.reduce((s, it) => {
-                 const vInfo = it.variation_info || {};
-                 return s + (it.quantity || 1) * (vInfo.retail_price || it.retail_price || it.price || 0);
-            }, 0);
+            const subtotal = items.reduce((s, it) => s + (it.quantity || 1) * (it.retail_price || it.price || 0), 0);
+            const shipFee  = order.shipping_fee || 0;
             const discount = order.total_discount || 0;
             const total    = order.total_price || order.total || (subtotal + shipFee - discount);
 
@@ -1274,22 +1007,9 @@ if (!empty($caremil_customer['gender'])) {
 
         function openOrderModal(orderId) {
             if (!orderId) return;
-            // Map status label for modal
-            const statusMap = {
-                'new': 'Mới', 'waiting_confirm': 'Chờ xác nhận', 'confirmed': 'Đã xác nhận',
-                'packing': 'Đang đóng gói', 'sending': 'Đang gửi hàng', 'shipping': 'Đang vận chuyển',
-                'success': 'Hoàn thành', 'completed': 'Hoàn thành', 'return': 'Đang hoàn', 'returned': 'Đã hoàn', 'cancel': 'Đã hủy', 'canceled': 'Đã hủy'
-            };
-
             const found = (caremilOrders || []).find(o => String(o.id) === String(orderId) || String(o.code) === String(orderId));
             if (!found) return;
-            
-            // Enrich with localized status before filling
-            const foundCopy = {...found}; 
-            const sName = (foundCopy.status_name || foundCopy.status || '').toLowerCase();
-            foundCopy.status_name = statusMap[sName] || foundCopy.status_name || foundCopy.status;
-            
-            fillOrderModal(foundCopy);
+            fillOrderModal(found);
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }
@@ -1478,7 +1198,7 @@ if (!empty($caremil_customer['gender'])) {
                     item.className = 'w-full text-left px-3 py-2 hover:bg-blue-50 text-sm flex flex-col';
                     const line1 = c.name || '';
                     const line2 = c.district_name ? `Quận/Huyện cũ  : ${c.district_name}` : '';
-                    item.innerHTML = `<span class="font-semibold text-primary-900">${line1}</span>${line2 ? `<span class="text-[11px] text-gray-500">${line2}</span>` : ''}`;
+                    item.innerHTML = `<span class="font-semibold text-brand-navy">${line1}</span>${line2 ? `<span class="text-[11px] text-gray-500">${line2}</span>` : ''}`;
                     item.addEventListener('click', () => {
                         searchInput.value = c.name || '';
                         hiddenCommune.value = c.id || '';
@@ -1550,12 +1270,12 @@ if (!empty($caremil_customer['gender'])) {
                 container.innerHTML += `
                     <div class="bg-white p-6 rounded-2xl shadow-card border border-gray-100 relative">
                         <div class="flex items-start gap-3">
-                            <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-accent-600"><i class="fas fa-home"></i></div>
+                            <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-brand-blue"><i class="fas fa-home"></i></div>
                             <div class="flex-1">
-                                <p class="font-bold text-primary-900 text-sm">${name} <span class="text-gray-500 font-normal">| ${phone}</span></p>
+                                <p class="font-bold text-brand-navy text-sm">${name} <span class="text-gray-500 font-normal">| ${phone}</span></p>
                                 <p class="text-sm text-gray-700 mt-1 break-words">${full}</p>
                                 <div class="flex gap-3 mt-3 text-xs font-bold">
-                                    <button type="button" class="text-accent-600 hover:underline" onclick='caremilAddrEdit(${JSON.stringify(id)}, ${JSON.stringify(name)}, ${JSON.stringify(phone)}, ${JSON.stringify(full)}, ${JSON.stringify(prov)}, ${JSON.stringify(dist)}, ${JSON.stringify(comm)})'>Sửa</button>
+                                    <button type="button" class="text-brand-blue hover:underline" onclick='caremilAddrEdit(${JSON.stringify(id)}, ${JSON.stringify(name)}, ${JSON.stringify(phone)}, ${JSON.stringify(full)}, ${JSON.stringify(prov)}, ${JSON.stringify(dist)}, ${JSON.stringify(comm)})'>Sửa</button>
                                     ${id ? `<button type="button" class="text-red-500 hover:underline" onclick='caremilAddrDelete(${JSON.stringify(id)})'>Xóa</button>` : ''}
                                 </div>
                             </div>

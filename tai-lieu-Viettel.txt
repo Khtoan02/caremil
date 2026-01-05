@@ -1,0 +1,441 @@
+import React, { useState, useEffect } from 'react';
+import { Truck, Box, MapPin, DollarSign, AlertCircle, CheckCircle, Package, ShieldAlert, Wifi, Settings, RefreshCw, Globe, ArrowRightLeft } from 'lucide-react';
+
+// --- CẤU HÌNH TOKEN MẶC ĐỊNH (Từ yêu cầu của bạn - Hết hạn 2026) ---
+const DEFAULT_TOKEN = "eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiIwMzI5MjQ5NTM2IiwiVXNlcklkIjoxMTg0MzI4NSwiRnJvbVNvdXJjZSI6NSwiVG9rZW4iOiJNWERIS1ZJMDdXNUszODhCUyIsImV4cCI6MTc2NzI1NDIyNiwiUGFydG5lciI6MTE4NDMyODV9.q-qzfQYG07y7QdAZxgqAaVccnLaKo3ubrrw2ji3tHmWRmUEj3RdSmftyLXol26rxM7yRI2s9wf3nt7UlTS50kA";
+
+// --- PROXY ---
+// corsproxy.io là lựa chọn ổn định nhất hiện nay cho demo client-side
+const PROXY_URL = 'https://corsproxy.io/?';
+
+const LOCATIONS = {
+  provinces: [
+    { id: 1, name: "Hà Nội" },
+    { id: 2, name: "TP. Hồ Chí Minh" },
+    { id: 3, name: "Đà Nẵng" }
+  ],
+  districts: {
+    1: [ // Hà Nội
+      { id: 1, name: "Quận Ba Đình" },
+      { id: 2, name: "Quận Hoàn Kiếm" },
+      { id: 5, name: "Quận Cầu Giấy" },
+      { id: 6, name: "Quận Đống Đa" },
+      { id: 16, name: "Huyện Sóc Sơn" }
+    ],
+    2: [ // TP. HCM
+      { id: 18, name: "Quận 1" },
+      { id: 19, name: "Quận 12" },
+      { id: 20, name: "Quận Thủ Đức" },
+      { id: 21, name: "Quận 9" }
+    ],
+    3: [ // Đà Nẵng
+      { id: 37, name: "Quận Hải Châu" },
+      { id: 38, name: "Quận Thanh Khê" }
+    ]
+  }
+};
+
+export default function App() {
+  // --- STATE ---
+  // Sử dụng luôn token mặc định, không cần gọi API login
+  const [token, setToken] = useState(DEFAULT_TOKEN);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [shippingRates, setShippingRates] = useState(null);
+  
+  // Cài đặt nâng cao
+  const [useProxy, setUseProxy] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const [sender, setSender] = useState({ provinceId: 1, districtId: 5 });
+  const [receiver, setReceiver] = useState({ provinceId: 2, districtId: 18 });
+  const [product, setProduct] = useState({
+    weight: 1000, 
+    price: 500000, 
+    moneyCollection: 500000,
+    length: 10, width: 10, height: 10
+  });
+
+  // --- HÀM GỌI API ---
+  const callApi = async (url, method, body, customHeaders = {}) => {
+    // Logic URL
+    let fetchUrl = url;
+    if (useProxy) {
+      // encodeURIComponent là bắt buộc đối với corsproxy.io để tránh lỗi query params
+      fetchUrl = `${PROXY_URL}${encodeURIComponent(url)}`;
+    }
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      ...customHeaders
+    };
+
+    console.log(`Calling API [${method}]:`, fetchUrl);
+
+    try {
+      const response = await fetch(fetchUrl, {
+        method: method,
+        headers: headers,
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}...`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Fetch error:", error);
+      throw error;
+    }
+  };
+
+  // --- TÍNH PHÍ (REALTIME) ---
+  const calculateShippingFee = async () => {
+    if (!token) {
+      setError("Thiếu Token xác thực.");
+      return;
+    }
+
+    setLoading(true);
+    setShippingRates(null);
+    setError('');
+
+    try {
+      const payload = {
+        "SENDER_PROVINCE": parseInt(sender.provinceId),
+        "SENDER_DISTRICT": parseInt(sender.districtId),
+        "RECEIVER_PROVINCE": parseInt(receiver.provinceId),
+        "RECEIVER_DISTRICT": parseInt(receiver.districtId),
+        "PRODUCT_TYPE": "HH", 
+        "PRODUCT_WEIGHT": parseInt(product.weight),
+        "PRODUCT_PRICE": parseInt(product.price),
+        "MONEY_COLLECTION": String(product.moneyCollection), // API yêu cầu String cho tiền thu hộ
+        "PRODUCT_LENGTH": parseInt(product.length),
+        "PRODUCT_WIDTH": parseInt(product.width),
+        "PRODUCT_HEIGHT": parseInt(product.height),
+        "TYPE": 1 
+      };
+
+      const data = await callApi(
+        'https://partner.viettelpost.vn/v2/order/getPriceAll',
+        'POST',
+        payload,
+        { 'Token': token }
+      );
+
+      // Kiểm tra phản hồi
+      // API getPriceAll trả về trực tiếp một mảng [] hoặc object có data: []
+      if (Array.isArray(data)) {
+        setShippingRates(data);
+      } else if (data.status === 200 && Array.isArray(data.data)) {
+         setShippingRates(data.data);
+      } else if (data.status === 204 || data.message === "Không có dữ liệu") {
+         setShippingRates([]); // Không có dịch vụ phù hợp
+         setError("Không tìm thấy dịch vụ vận chuyển phù hợp cho tuyến này.");
+      } else {
+        console.warn("Unexpected API Response:", data);
+        // Nếu API trả về lỗi logic (VD: Token hết hạn, sai tham số)
+        if (data.message) throw new Error(data.message);
+        throw new Error('Cấu trúc dữ liệu trả về không xác định.');
+      }
+
+    } catch (err) {
+      setError(`Lỗi: ${err.message}`);
+      // Nếu lỗi CORS (thường là "Failed to fetch"), gợi ý người dùng
+      if (err.message.includes("Failed to fetch") && !useProxy) {
+        setError("Lỗi kết nối Direct. Vui lòng bật Proxy hoặc cài Extension CORS.");
+        setShowSettings(true);
+      } else if (err.message.includes("Failed to fetch") && useProxy) {
+        setError("Proxy đang quá tải hoặc bị chặn. Vui lòng đợi 1 lát và thử lại.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
+      <div className="max-w-5xl mx-auto">
+        
+        {/* Header & Controls */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <div className="flex items-center gap-3">
+             <div className="bg-red-600 p-2 rounded text-white">
+                <Truck className="w-6 h-6" />
+             </div>
+            <div>
+                <h1 className="text-2xl font-bold text-gray-900">Tính Cước Viettel Post</h1>
+                <p className="text-xs text-gray-500">API v2 Realtime</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+             {/* Trạng thái Token */}
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-medium border border-green-200">
+                <CheckCircle className="w-3 h-3" />
+                Token Hợp lệ (đến 2026)
+             </div>
+
+            <button 
+              onClick={() => setShowSettings(!showSettings)}
+              className={`p-2 rounded-full transition-colors ${showSettings ? 'bg-gray-200 text-gray-900' : 'hover:bg-gray-100 text-gray-500'}`}
+              title="Cấu hình kết nối"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Settings Panel */}
+        {showSettings && (
+          <div className="mb-6 bg-white border border-gray-200 p-4 rounded-xl shadow-sm animate-in slide-in-from-top-2">
+            <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+              <Globe className="w-4 h-4 text-blue-500" /> Cấu hình Kết nối Mạng
+            </h3>
+            
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                 <div className="flex items-center gap-3">
+                    <button 
+                       onClick={() => setUseProxy(true)}
+                       className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${useProxy ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-gray-200 hover:bg-gray-50'}`}
+                    >
+                       <ArrowRightLeft className="w-4 h-4" />
+                       Dùng Proxy (Khuyên dùng)
+                    </button>
+                    <button 
+                       onClick={() => setUseProxy(false)}
+                       className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${!useProxy ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-gray-200 hover:bg-gray-50'}`}
+                    >
+                       <ShieldAlert className="w-4 h-4" />
+                       Kết nối Trực tiếp (Direct)
+                    </button>
+                 </div>
+                 <p className="text-xs text-gray-500 pl-1 mt-1">
+                    * Chọn "Kết nối Trực tiếp" nếu bạn đã cài Extension "Allow CORS" trên trình duyệt.
+                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 flex items-start gap-3 rounded-r-md">
+             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+             <div className="w-full">
+               <p className="font-bold">Đã xảy ra lỗi:</p>
+               <p className="text-sm">{error}</p>
+             </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Cột trái: Form (Chiếm 4 phần) */}
+          <div className="lg:col-span-4 space-y-5">
+            
+            {/* Sender */}
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <MapPin className="w-4 h-4" /> Điểm Gửi Hàng
+              </h2>
+              <div className="space-y-3">
+                <div>
+                   <label className="block text-xs font-medium text-gray-700 mb-1">Tỉnh/Thành phố</label>
+                   <select 
+                     className="w-full border-gray-300 border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                     value={sender.provinceId}
+                     onChange={(e) => setSender({...sender, provinceId: e.target.value, districtId: Object.values(LOCATIONS.districts[e.target.value])[0].id})}
+                   >
+                     {LOCATIONS.provinces.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                   </select>
+                </div>
+                <div>
+                   <label className="block text-xs font-medium text-gray-700 mb-1">Quận/Huyện</label>
+                   <select 
+                     className="w-full border-gray-300 border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                     value={sender.districtId}
+                     onChange={(e) => setSender({...sender, districtId: e.target.value})}
+                   >
+                     {LOCATIONS.districts[sender.provinceId]?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                   </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Receiver */}
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <MapPin className="w-4 h-4" /> Điểm Nhận Hàng
+              </h2>
+              <div className="space-y-3">
+                <div>
+                   <label className="block text-xs font-medium text-gray-700 mb-1">Tỉnh/Thành phố</label>
+                   <select 
+                     className="w-full border-gray-300 border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                     value={receiver.provinceId}
+                     onChange={(e) => setReceiver({...receiver, provinceId: e.target.value, districtId: Object.values(LOCATIONS.districts[e.target.value])[0].id})}
+                   >
+                     {LOCATIONS.provinces.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                   </select>
+                </div>
+                <div>
+                   <label className="block text-xs font-medium text-gray-700 mb-1">Quận/Huyện</label>
+                   <select 
+                     className="w-full border-gray-300 border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                     value={receiver.districtId}
+                     onChange={(e) => setReceiver({...receiver, districtId: e.target.value})}
+                   >
+                     {LOCATIONS.districts[receiver.provinceId]?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                   </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Product */}
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Box className="w-4 h-4" /> Thông Tin Kiện Hàng
+              </h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Trọng lượng (g)</label>
+                      <div className="relative">
+                        <input type="number" className="w-full border border-gray-300 rounded-lg p-2 text-sm font-semibold pl-3 pr-8" value={product.weight} onChange={(e)=>setProduct({...product, weight: e.target.value})} />
+                        <span className="absolute right-3 top-2 text-xs text-gray-400">g</span>
+                      </div>
+                    </div>
+                     <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">COD (VNĐ)</label>
+                      <input type="number" className="w-full border border-gray-300 rounded-lg p-2 text-sm" value={product.moneyCollection} onChange={(e)=>setProduct({...product, moneyCollection: e.target.value})} />
+                    </div>
+                </div>
+                
+                <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Kích thước (Dài x Rộng x Cao)</label>
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="relative">
+                            <input type="number" className="w-full border border-gray-300 rounded-lg p-2 text-center text-sm" placeholder="D" value={product.length} onChange={(e)=>setProduct({...product, length: e.target.value})} />
+                            <span className="absolute right-1 top-2.5 text-[10px] text-gray-400">cm</span>
+                        </div>
+                        <div className="relative">
+                            <input type="number" className="w-full border border-gray-300 rounded-lg p-2 text-center text-sm" placeholder="R" value={product.width} onChange={(e)=>setProduct({...product, width: e.target.value})} />
+                            <span className="absolute right-1 top-2.5 text-[10px] text-gray-400">cm</span>
+                        </div>
+                        <div className="relative">
+                            <input type="number" className="w-full border border-gray-300 rounded-lg p-2 text-center text-sm" placeholder="C" value={product.height} onChange={(e)=>setProduct({...product, height: e.target.value})} />
+                             <span className="absolute right-1 top-2.5 text-[10px] text-gray-400">cm</span>
+                        </div>
+                    </div>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={calculateShippingFee}
+              disabled={loading}
+              className={`w-full py-3.5 px-4 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2
+                ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 hover:shadow-xl active:scale-[0.98]'}`}
+            >
+              {loading ? (
+                  <>
+                    <RefreshCw className="w-5 h-5 animate-spin" /> Đang tính toán...
+                  </>
+              ) : 'TÍNH CƯỚC NGAY'}
+            </button>
+
+          </div>
+
+          {/* Cột phải: Kết quả (Chiếm 8 phần) */}
+          <div className="lg:col-span-8">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-full flex flex-col">
+              <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2 border-b border-gray-100 pb-4">
+                <DollarSign className="w-5 h-5 text-green-600" /> 
+                Bảng Giá Dịch Vụ
+              </h2>
+
+              {!shippingRates ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-100 rounded-xl min-h-[300px] bg-gray-50/50">
+                  {loading ? (
+                    <div className="flex flex-col items-center gap-3">
+                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600"></div>
+                         <p className="text-sm font-medium text-gray-500">Đang kết nối API ViettelPost...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <Package className="w-16 h-16 mb-4 opacity-20 text-gray-500" />
+                      <p className="font-medium">Vui lòng nhập thông tin và bấm "Tính Cước"</p>
+                      <p className="text-xs mt-1 text-gray-400">Hệ thống sẽ lấy giá trực tiếp từ Server</p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
+                  {shippingRates.length === 0 && (
+                    <div className="p-6 bg-orange-50 text-orange-800 rounded-xl text-center border border-orange-100">
+                      <p className="font-bold mb-1">Không tìm thấy dịch vụ!</p>
+                      <p className="text-sm">Tuyến đường này có thể chưa hỗ trợ hoặc thông tin hàng hóa chưa hợp lệ.</p>
+                    </div>
+                  )}
+                  
+                  {shippingRates.map((rate, index) => (
+                    <div key={index} className="flex flex-col md:flex-row justify-between p-5 border border-gray-100 rounded-xl hover:border-red-200 hover:shadow-lg hover:bg-red-50/30 transition-all bg-white relative group animate-in fade-in slide-in-from-bottom-2 duration-300" style={{animationDelay: `${index * 50}ms`}}>
+                      
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded tracking-wider uppercase">
+                            {rate.MA_DV_CHINH}
+                          </span>
+                          <h3 className="font-bold text-gray-800 text-lg group-hover:text-red-700 transition-colors">{rate.TEN_DICHVU}</h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 mt-3">
+                          <p className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-500" /> 
+                            Thời gian: <span className="font-medium text-gray-900">{rate.THOI_GIAN}</span>
+                          </p>
+                          {rate.EXTRA_SERVICE && rate.EXTRA_SERVICE.length > 0 && (
+                             <div className="col-span-1 sm:col-span-2 flex flex-wrap gap-2 mt-1">
+                                {rate.EXTRA_SERVICE.map((s, idx) => (
+                                    <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                        + {s.SERVICE_NAME}
+                                    </span>
+                                ))}
+                             </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 md:mt-0 text-right md:pl-6 md:border-l border-gray-100 min-w-[160px] flex flex-row md:flex-col justify-between items-center md:items-end">
+                        <div className="text-left md:text-right">
+                            <p className="text-xs text-gray-400 mb-0.5">Tổng cước phí</p>
+                            <p className="text-2xl font-bold text-red-600">{formatCurrency(rate.GIA_CUOC)}</p>
+                        </div>
+                        <button className="hidden md:block mt-3 text-xs font-bold text-red-600 hover:text-red-700 hover:underline">
+                            Chi tiết phí &rarr;
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+                    <p className="text-xs text-gray-400 italic flex items-center justify-center gap-1">
+                       <CheckCircle className="w-3 h-3" /> Dữ liệu cập nhật Realtime từ Viettel Post API
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
